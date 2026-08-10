@@ -15,7 +15,10 @@ import { AdvisorPanel } from './components/AdvisorPanel';
 import { ReviewPanel } from './components/ReviewPanel';
 import { StrategyLibPanel } from './components/StrategyLibPanel';
 import { ExpertPanel } from './components/ExpertPanel';
+import { SmartAnalysisPanel } from './components/SmartAnalysisPanel';
 import { saveCorrection, loadCorrections } from './game/correctionLib';
+import { analysisFromHandCodes } from './game/advisor';
+import type { ScenarioAnalysis } from './game/types';
 
 type Tab = 'info' | 'advisor' | 'review' | 'strategy' | 'log' | 'expert';
 
@@ -34,6 +37,10 @@ function App() {
   const [resultCollapsed, setResultCollapsed] = useState(false);
   const [showResultBadge, setShowResultBadge] = useState(false);
   const [mistakeVisible, setMistakeVisible] = useState(true);
+
+  // 辅助决策场景分析(仅用户主动请求时显示)
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analysis, setAnalysis] = useState<ScenarioAnalysis | null>(null);
 
   const human = state.players[HUMAN_SEAT];
   const started = state.phase !== 'idle';
@@ -101,6 +108,16 @@ function App() {
     setCorrectionsTick((t) => t + 1);
     // 保存校正后,下一次buildAdvice(摸牌/出牌时会自动读新数据,因为phase变化
   }, [state]);
+
+  // === 请求辅助决策: 用户主动触发场景分析 ===
+  const handleRequestAnalysis = useCallback(() => {
+    if (!canDiscard) return;
+    const hand = state.players[HUMAN_SEAT].hand;
+    const codes = hand.map(tileCode);
+    const result = analysisFromHandCodes(codes);
+    setAnalysis(result);
+    setShowAnalysis(true);
+  }, [canDiscard, state]);
 
   // === 结束横幅折叠/展开控制 ===
   useEffect(() => {
@@ -190,6 +207,11 @@ function App() {
                   drawnTileId={state.drawnTileId}
                   recommendTileId={recTileId}
                 />
+                {canDiscard && !showAnalysis && (
+                  <button className="request-analysis-btn" onClick={handleRequestAnalysis}>
+                    🧭 请求辅助决策
+                  </button>
+                )}
                 {selfOptions.length > 0 && (
                   <ActionPanel options={selfOptions} mode="self" onChoose={humanSelfAction} onPass={humanPassSelf} />
                 )}
@@ -274,6 +296,22 @@ function App() {
           title="点击恢复横幅"
         >
           {state.isDraw ? '📋 流局' : '🏆 ' + SEAT_NAME[state.winner!] + '胡 · 点击恢复'}
+        </div>
+      )}
+
+      {/* 辅助决策场景分析浮层 */}
+      {showAnalysis && analysis && (
+        <div className="analysis-overlay" onClick={() => setShowAnalysis(false)}>
+          <div className="analysis-container" onClick={(e) => e.stopPropagation()}>
+            <SmartAnalysisPanel
+              analysis={analysis}
+              onClose={() => setShowAnalysis(false)}
+              onDiscard={(tileId) => {
+                setShowAnalysis(false);
+                humanDiscard(tileId);
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

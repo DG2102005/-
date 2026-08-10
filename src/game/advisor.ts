@@ -1,6 +1,6 @@
 // 辅助决策引擎: 向听计算 + 最优打法建议 + 失误检测
 // 综合考虑: 自身手牌结构、桌面已出牌(各家弃牌/碰杠)、剩余牌概率、策略库经验
-import type { GameState, PlayerState, Seat, Tile, AdviceData, MistakeAlert } from './types';
+import type { GameState, PlayerState, Seat, Tile, AdviceData, MistakeAlert, ScenarioAnalysis, DiscardScenario } from './types';
 import { tileCode, isHongZhong, tileName, tileIndex, indexToTile } from './types';
 import { canWin, checkTing } from './win';
 import { getStrategyHint, getAllStrategyHints, getStrategyLibStats } from './strategyLib';
@@ -27,7 +27,7 @@ export function calcShanten(hand: Tile[], meldsCount: number): number {
   return calcShantenFromBase(hand, meldsCount);
 }
 
-function calcShantenFromBase(hand: Tile[], meldsCount: number): number {
+export function calcShantenFromBase(hand: Tile[], meldsCount: number): number {
   // 0: 听牌
   if (checkTing(hand, meldsCount).length > 0) return 0;
   // 1: 弃任一非红中牌后能听
@@ -310,4 +310,116 @@ export function dangerLevel(state: GameState, tile: Tile): number {
   const seen = publicSeen[idx];
   // 已见越多,剩余越少,危险度越低
   return Math.max(0, 4 - seen - 1); // 0=安全, 3=极危险(从未见过)
+}
+
+// ========== 辅助决策: 按需场景分析 ==========
+
+// 牌代码(m1等)转线性索引(0-33)
+export function codeToIndex(code: string): number {
+  const tile = indexToTile(ALL_CODES.indexOf(code));
+  // indexToTile 通过 idx 计算 suit+rank, 反过来用 tileIndex
+  return tileIndex(tile);
+}
+
+// 从代码数组构建 Tile 对象(用于渲染手牌)
+export function buildHandFromCodes(codes: string[]): Tile[] {
+  let idCounter = 10000;
+  return codes.map((code) => {
+    const idx = ALL_CODES.indexOf(code);
+    if (idx < 0) return null;
+    const t = indexToTile(idx);
+    return { id: idCounter++, suit: t.suit, rank: t.rank };
+  }).filter((t): t is Tile => t !== null);
+}
+
+// 核心分析: 给定手牌代码,生成多个弃牌场景对比
+export function analysisFromHandCodes(handCodes: string[]): ScenarioAnalysis {
+  const meldsCount = 0; // 场景分析默认无副露(选牌推演模式)
+  const hand = buildHandFromCodes(handCodes);
+
+  // 当前向听
+  const baseLen = (4 - meldsCount) * 3 + 1;
+  let currentShanten: number;
+  if (hand.length === baseLen) {
+    const ting = checkTing(hand, meldsCount);
+    currentShanten = ting.length > 0 ? 0 : calcShantenFromBase(hand, meldsCount);
+  } else if (hand.length === baseLen + 1) {
+    // 14张: 先判断是否已胡, 否则算 baseLen 向听
+    currentShanten = canWin(hand, meldsCount) ? -1 : calcShantenFromBase(hand.slice(0, baseLen), meldsCount);
+  } else {
+    currentShanten = 99;
+  }
+
+  // 构建公共已见牌(用于计算进张剩余)
+  const publicSeen = new Array(34).fill(0);
+
+  const scenarios: DiscardScenario[] = [];
+  for (const t of hand) {
+    if (isHongZhong(t)) continue; // 红中不打
+
+    const code = tileCode(t);
+    const rest = hand.filter((x) => x.id !== t.id);
+    const afterTing = checkTing(rest, meldsCount);
+    const afterShanten = afterTing.length > 0 ? 0 : calcShantenFromBase(rest, meldsCount);
+
+    // 进张: 摸到哪些牌能推进(向听更低)
+    const improvementSet = new Set<string>();
+    for (let idx = 0; idx < 34; idx++) {
+      const candidate = indexToTile(idx);
+      const test = rest.concat(candidate);
+      const testTing = checkTing(test, meldsCount);
+      const testShanten = testTing.length > 0 ? 0 : calcShantenFromBase(test, meldsCount);
+      if (testShanten < afterShanten || testTing.length > 0) {
+        improvementSet.add(tileCode(candidate));
+      }
+    }
+    const improvementCodes = Array.from(improvementSet);
+
+    // 进张门数和张数
+    let tileCount = 0;
+    for (const imp of improvementCodes) {
+      const impIdx = ALL_CODES.indexOf(imp);
+      const handCount = rest.filter((x) => tileCode(x) === imp).length;
+      const remain = Math.max(0, 4 - handCount - publicSeen[impIdx]);
+      tileCount += remain;
+    }
+
+    // 期望价值: 听牌张数*50 + 进张数*3 - 向听*1000
+    const expectedValue = afterTing.length * 50 + tileCount * 3 - afterShanten * 1000;
+
+    // 危险度(简化: 基于牌面类型)
+    const dLevel = t.suit === 'z' ? (isHongZhong(t) ? 0 : 1) : (t.rank >= 3 && t.rank <= 7 ? 1 : 0);
+
+    // 推理理由
+    let reasoning = '';
+    if (afterTing.length > 0) {
+      const tingNames = afterTing.map((c) => tileName(indexToTile(ALL_CODES.indexOf(c))));
+      reasoning = `打出后听${afterTing.length}张: ${tingNames.join('、')}`;
+    } else if (afterShanten === 0) {
+      reasoning = '打出后维持听牌';
+    } else {
+      reasoning = `打出后${afterShanten}向听,进${improvementCodes.length}门${tileCount}张`;
+    }
+
+    scenarios.push({
+      discardCode: code,
+      discardName: tileName(t),
+      shantenAfter: afterShanten,
+      improvementCodes,
+      categoryCount: improvementCodes.length,
+      tileCount,
+      expectedValue,
+      dangerLevel: dLevel,
+      reasoning,
+    });
+  }
+
+  // 按评分排序(高→低)
+  scenarios.sort((a, b) => b.expectedValue - a.expectedValue);
+
+  return {
+    handCodes: handCodes.slice(),
+    currentShanten,
+    scenarios: scenarios.slice(0, 6), // 最多展示6个方案
+  };
 }

@@ -1179,4 +1179,233 @@ body {
   word-break: break-all;
 }
 
+/* ========== 请求辅助决策按钮 ========== */
+.request-analysis-btn {
+  background: linear-gradient(135deg, #2a7de1, #1a5cb0);
+  color: #fff;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(42,125,225,0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.request-analysis-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(42,125,225,0.5);
+}
+
+/* ========== 辅助决策浮层 ========== */
+.analysis-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.analysis-container {
+  width: 92%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #1a1208;
+  border: 1px solid rgba(212,175,55,0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ========== SmartAnalysisPanel ========== */
+.smart-analysis-panel {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text);
+}
+.sap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.sap-title {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 14px;
+}
+.sap-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.sap-close:hover { color: var(--text); }
+
+.sap-summary {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.sap-shanten {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.sap-shanten b { color: var(--gold); }
+.sap-summary-text {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.sap-hand {
+  margin-bottom: 10px;
+}
+.sap-hand-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.sap-hand-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.sap-scenarios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenario-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 8px;
+  padding: 8px;
+  transition: border-color 0.2s;
+}
+.scenario-card:hover {
+  border-color: rgba(212,175,55,0.3);
+}
+.scenario-best {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.08);
+}
+
+.scenario-discard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.scenario-discard-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.scenario-discard-name {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.scenario-incoming {
+  margin-bottom: 6px;
+}
+.scenario-incoming-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.scenario-incoming-label b {
+  color: #5dffa0;
+}
+.scenario-incoming-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.scenario-no-incoming {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.scenario-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.scenario-result {
+  font-size: 11px;
+  color: var(--text);
+}
+.scenario-danger {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.danger-0 { background: rgba(93,255,160,0.15); color: #5dffa0; }
+.danger-1 { background: rgba(255,193,7,0.15); color: #ffc107; }
+.danger-2 { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+
+.scenario-metrics {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.metric {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+}
+.metric-label { color: var(--text-dim); }
+.metric-value { color: var(--gold); font-weight: 600; }
+
+.scenario-reasoning {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.scenario-exec-btn {
+  width: 100%;
+  margin-top: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.scenario-exec-btn:hover { filter: brightness(1.1); }
+
+/* 场景分析滚动条 */
+.analysis-container::-webkit-scrollbar { width: 5px; }
+.analysis-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 3px; }
+
 

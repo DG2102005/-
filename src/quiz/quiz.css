@@ -1,0 +1,1038 @@
+/* ===== 题库训练系统样式 ===== */
+
+/* 模式切换按钮 */
+.mode-switch {
+  display: flex;
+  gap: 2px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  padding: 2px;
+}
+.mode-switch button {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.mode-switch button:hover { color: var(--text); }
+.mode-switch button.active {
+  background: var(--gold);
+  color: #1a1208;
+  font-weight: 600;
+}
+
+/* 题库主容器 */
+.quiz-app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #1a1208, #0f0a05);
+  overflow: auto;
+  padding: 16px;
+}
+
+/* ===== 题库主页 ===== */
+.quiz-home {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+.quiz-home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.quiz-home-header h2 {
+  font-size: 22px;
+  color: var(--gold);
+}
+.quiz-back-btn {
+  background: rgba(212,175,55,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(212,175,55,0.4);
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.quiz-back-btn:hover { background: rgba(212,175,55,0.3); }
+
+/* 统计面板 */
+.quiz-stats-panel {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.quiz-stat-card {
+  flex: 1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-align: center;
+}
+.quiz-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.quiz-stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* 模式卡片网格 */
+.quiz-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.quiz-mode-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.quiz-mode-card:hover {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.1);
+  transform: translateY(-2px);
+}
+.quiz-mode-icon { font-size: 28px; }
+.quiz-mode-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.quiz-mode-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+.quiz-mode-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.quiz-mode-meta span b { color: var(--gold); }
+
+/* 自定义题库入口 */
+.quiz-custom-entry {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-custom-entry:hover { border-color: var(--gold); }
+.quiz-custom-entry-title { font-size: 15px; color: var(--text); }
+.quiz-custom-entry-desc { font-size: 12px; color: var(--text-dim); }
+
+/* ===== 作答页 ===== */
+.quiz-play {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.quiz-play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.quiz-progress-text { font-size: 14px; color: var(--text); }
+.quiz-progress-text b { color: var(--gold); }
+
+.quiz-fav-btn {
+  background: none;
+  border: 1px solid rgba(212,175,55,0.3);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+.quiz-fav-btn.active { color: #ffd700; border-color: #ffd700; }
+
+/* 手牌区 */
+.quiz-hand-area {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* 问题文字 */
+.quiz-question-text {
+  text-align: center;
+  font-size: 16px;
+  color: var(--text);
+  padding: 8px;
+}
+
+/* 选项区 */
+.quiz-options {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 12px;
+}
+.quiz-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.quiz-option:hover { transform: translateY(-3px); }
+.quiz-option-letter {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(212,175,55,0.3);
+}
+.quiz-option.correct .quiz-option-letter {
+  background: #2d7a2d;
+  color: #fff;
+  border-color: #2d7a2d;
+}
+.quiz-option.wrong .quiz-option-letter {
+  background: #c9302c;
+  color: #fff;
+  border-color: #c9302c;
+}
+.quiz-option.correct::after {
+  content: '✓';
+  color: #2d7a2d;
+  font-size: 20px;
+  font-weight: 700;
+}
+.quiz-option.wrong::after {
+  content: '✗';
+  color: #c9302c;
+  font-size: 20px;
+  font-weight: 700;
+}
+.quiz-option.disabled { cursor: default; opacity: 0.6; }
+.quiz-option.disabled:hover { transform: none; }
+
+/* 解析区 */
+.quiz-explanation {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+.quiz-explanation-title {
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.quiz-explanation-text {
+  font-size: 13px;
+  color: var(--text);
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+/* 底部工具栏 */
+.quiz-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(212,175,55,0.15);
+}
+.quiz-toolbar-left, .quiz-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quiz-toolbar-score {
+  font-size: 14px;
+  color: var(--text);
+}
+.quiz-toolbar-score b { color: var(--gold); }
+.quiz-toolbar-btn {
+  background: rgba(212,175,55,0.12);
+  color: var(--text);
+  border: 1px solid rgba(212,175,55,0.25);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.quiz-toolbar-btn:hover { background: rgba(212,175,55,0.25); }
+.quiz-toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.quiz-toolbar-btn.primary {
+  background: var(--gold);
+  color: #1a1208;
+  border-color: var(--gold);
+  font-weight: 600;
+}
+
+/* 答题弹窗 */
+.quiz-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.quiz-modal {
+  background: linear-gradient(180deg, #2a1810, #1a0f08);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 30px 40px;
+  text-align: center;
+  min-width: 280px;
+}
+.quiz-modal-icon { font-size: 48px; margin-bottom: 8px; }
+.quiz-modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.quiz-modal-title.correct { color: #4caf50; }
+.quiz-modal-title.wrong { color: #f44336; }
+.quiz-modal-body { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; }
+.quiz-modal-btn {
+  background: var(--gold);
+  color: #1a1208;
+  border: none;
+  padding: 8px 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 分析面板弹层 */
+.quiz-analysis-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+.quiz-analysis-overlay .smart-analysis-panel {
+  max-width: 700px;
+  max-height: 85vh;
+  overflow: auto;
+}
+
+/* ===== 类别选择子页 ===== */
+.quiz-category-select {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+.quiz-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.quiz-category-item {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-category-item:hover { border-color: var(--gold); background: rgba(212,175,55,0.08); }
+.quiz-category-name { font-size: 15px; color: var(--text); }
+.quiz-category-count { font-size: 12px; color: var(--text-dim); }
+
+/* 难度标签 */
+.difficulty-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.difficulty-tag.easy { background: #2d7a2d; color: #fff; }
+.difficulty-tag.medium { background: #b8860b; color: #fff; }
+.difficulty-tag.hard { background: #c9302c; color: #fff; }
+
+/* ===== 自定义题库列表 ===== */
+.custom-list {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+.custom-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.custom-list-item {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.custom-item-info { flex: 1; min-width: 0; }
+.custom-item-question { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom-item-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; display: flex; gap: 8px; }
+.custom-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.custom-action-btn {
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.2);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.custom-action-btn:hover { background: rgba(212,175,55,0.25); }
+.custom-action-btn.danger { color: #f44336; border-color: rgba(244,67,54,0.3); }
+.custom-action-btn.danger:hover { background: rgba(244,67,54,0.15); }
+
+.custom-search {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.2);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.custom-search::placeholder { color: var(--text-dim); }
+
+/* ===== 自定义编辑器 ===== */
+.custom-editor {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.editor-label { font-size: 13px; color: var(--gold); font-weight: 600; }
+.editor-input, .editor-textarea, .editor-select {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.2);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.editor-textarea { min-height: 60px; resize: vertical; }
+.editor-input:focus, .editor-textarea:focus, .editor-select:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+/* 牌池(用于编辑器和模拟器) */
+.tile-pool {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 8px;
+  padding: 12px;
+}
+.tile-pool-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  align-items: flex-end;
+}
+.tile-pool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tile-pool-item:hover { transform: translateY(-2px); }
+.tile-pool-item.disabled { opacity: 0.3; cursor: not-allowed; }
+.tile-pool-item.disabled:hover { transform: none; }
+.tile-pool-count {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 600;
+  min-height: 14px;
+}
+.tile-pool-count.zero { color: #666; }
+
+/* 手牌区(编辑器/模拟器) */
+.simulator-hand {
+  background: rgba(0,0,0,0.25);
+  border: 2px dashed rgba(212,175,55,0.3);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 80px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+.simulator-hand-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* 模拟器布局 */
+.simulator-app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #1a1208, #0f0a05);
+  overflow: auto;
+  padding: 16px;
+}
+.simulator-container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.simulator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.simulator-header h2 { font-size: 20px; color: var(--gold); }
+.simulator-section-title {
+  font-size: 14px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.simulator-toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-top: 1px solid rgba(212,175,55,0.15);
+}
+.simulator-analysis {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* 错误提示 */
+.editor-errors {
+  background: rgba(244,67,54,0.1);
+  border: 1px solid rgba(244,67,54,0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #f44336;
+}
+.editor-errors ul { margin: 4px 0 0 16px; }
+
+/* 选项设置区 */
+.editor-options {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.editor-option-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.editor-option-letter {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.editor-option-letter.best { color: var(--gold); font-weight: 700; }
+
+/* 按钮组 */
+.editor-btn-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* ===== 自主舍牌推演面板 ===== */
+.discard-detail-panel {
+  background: rgba(0,0,0,0.35);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 16px 20px;
+  animation: slideIn 0.3s ease-out;
+}
+.discard-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 15px;
+  color: var(--text);
+}
+.discard-detail-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212,175,55,0.15);
+}
+.discard-stat-item {
+  flex: 1;
+  text-align: center;
+}
+.discard-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.discard-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.discard-detail-subtitle {
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.discard-incoming-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.discard-incoming-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212,175,55,0.08);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+.discard-incoming-name {
+  font-size: 12px;
+  color: var(--text);
+}
+.discard-detail-reasoning {
+  background: rgba(212,175,55,0.06);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #bbb;
+  line-height: 1.6;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 模拟器提示 */
+.simulator-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+/* ===== 选牌推演新UI ===== */
+/* 牌池 */
+.tile-pool {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tile-pool-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.tile-pool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.12s;
+}
+.tile-pool-item:hover {
+  background: rgba(212,175,55,0.15);
+  transform: translateY(-2px);
+}
+.tile-pool-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.tile-pool-item.disabled:hover {
+  background: transparent;
+  transform: none;
+}
+.tile-pool-count {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: -2px;
+}
+.tile-pool-count.zero { color: rgba(255,255,255,0.2); }
+
+/* 工具栏按钮 */
+.quiz-toolbar-btn {
+  background: rgba(0,0,0,0.35);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 5px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: 0.15s;
+}
+.quiz-toolbar-btn:hover { background: rgba(212,175,55,0.15); border-color: var(--gold); }
+.quiz-toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.quiz-toolbar-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.quiz-toolbar-btn.primary:hover { background: #d35400; }
+
+/* 舍牌分析面板 */
+.discard-detail-panel {
+  margin-top: 16px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 10px;
+  padding: 16px;
+}
+.discard-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.discard-detail-subtitle {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.discard-incoming-item:hover {
+  background: rgba(212,175,55,0.12) !important;
+  transform: translateY(-2px);
+}
+
+/* 进张牌型 — 横向紧凑牌墙 */
+.simulator-incoming-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(212,175,55,0.1);
+  border-radius: 10px;
+  padding: 12px;
+}
+.simulator-incoming-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.simulator-incoming-suit {
+  width: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  text-align: center;
+  flex-shrink: 0;
+}
+.simulator-incoming-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+.simulator-incoming-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.12s;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid transparent;
+}
+.simulator-incoming-tile:hover {
+  background: rgba(212,175,55,0.15);
+  transform: translateY(-3px);
+}
+.simulator-incoming-tile.improve {
+  border-color: rgba(212,175,55,0.45);
+  background: rgba(212,175,55,0.08);
+}
+.simulator-incoming-tile.self-draw {
+  border-color: rgba(46,204,113,0.5);
+  background: rgba(46,204,113,0.12);
+}
+.simulator-incoming-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.95);
+  border: 1px solid rgba(212,175,55,0.35);
+  border-radius: 6px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.simulator-incoming-tile:hover .simulator-incoming-tooltip {
+  display: block;
+}
+.simulator-incoming-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.simulator-incoming-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* 摸入推演结果 — 横向紧凑手牌 */
+.simulator-drawn-panel {
+  margin-top: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(212,175,55,0.15);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.simulator-drawn-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.simulator-drawn-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+.simulator-drawn-tile {
+  position: relative;
+  padding: 2px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  transition: 0.12s;
+  cursor: default;
+}
+.simulator-drawn-tile.new-drawn {
+  border-color: var(--gold);
+  background: rgba(212,175,55,0.15);
+}
+.simulator-drawn-tile:hover {
+  transform: translateY(-3px);
+  background: rgba(255,255,255,0.05);
+}
+.simulator-drawn-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.95);
+  border: 1px solid rgba(212,175,55,0.35);
+  border-radius: 6px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.simulator-drawn-tile:hover .simulator-drawn-tooltip {
+  display: block;
+}
+.simulator-drawn-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.simulator-drawn-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.simulator-drawn-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* 弹窗 */
+.quiz-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.quiz-modal {
+  background: var(--bg);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 28px;
+  min-width: 260px;
+  text-align: center;
+}
+.quiz-modal-icon { font-size: 36px; margin-bottom: 10px; }
+.quiz-modal-title { font-size: 16px; color: var(--gold); font-weight: 600; margin-bottom: 8px; }
+.quiz-modal-body { font-size: 15px; color: var(--text); margin-bottom: 16px; }
+.empty-state { color: var(--text-dim); text-align: center; padding: 24px; font-style: italic; }
+
+/* ===== 题库加载动画 ===== */
+.quiz-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  min-height: 400px;
+}
+.quiz-loading-spinner {
+  font-size: 64px;
+  animation: mahjongSpin 2s linear infinite;
+  margin-bottom: 24px;
+}
+.quiz-loading-title {
+  font-size: 22px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.quiz-loading-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+.quiz-loading-progress {
+  font-size: 15px;
+  color: var(--text);
+  padding: 10px 20px;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+}
+.quiz-loading-progress b {
+  color: var(--gold);
+  font-size: 18px;
+  margin: 0 4px;
+}
+
+/* 空题库操作 */
+.quiz-empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+/* 题库管理工具栏 */
+.quiz-manage-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.quiz-start-btn {
+  padding: 10px 24px;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 16px;
+}
+.quiz-start-btn:hover {
+  background: #e6c345;
+}
+@keyframes mahjongSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

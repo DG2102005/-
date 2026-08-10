@@ -244,3 +244,25 @@ export interface CorrectionTrend {
   topDisagreeCategories: string[]; // 最常与系统分歧的类别
   recent: UserCorrection[];
 }
+
+// ========== 辅助决策场景分析 ==========
+
+// 单个弃牌方案
+export interface DiscardScenario {
+  discardCode: string;         // 打出的牌代码
+  discardName: string;         // 打出的牌中文名
+  shantenAfter: number;        // 打出后的向听数
+  improvementCodes: string[];  // 可进张的牌代码(摸到这些牌能推进)
+  categoryCount: number;       // 进张门数(几种不同的牌)
+  tileCount: number;           // 进张总张数
+  expectedValue: number;       // 期望价值评分
+  dangerLevel: number;         // 危险度 0=安全 1=中 2=高
+  reasoning: string;           // 推荐理由
+}
+
+// 完整场景分析结果
+export interface ScenarioAnalysis {
+  handCodes: string[];         // 当前手牌代码
+  currentShanten: number;      // 当前向听数
+  scenarios: DiscardScenario[]; // 候选弃牌方案(已按评分排序)
+}
