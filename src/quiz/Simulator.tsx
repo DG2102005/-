@@ -1,11 +1,12 @@
 // 选牌推演 — 自由选牌 → 真实舍牌 → 自动进张分析 → 自摸推演
 import { useMemo, useState, useCallback } from 'react';
 import { Tile as TileComp } from '../components/Tile';
-import { SmartAnalysisPanel } from '../components/SmartAnalysisPanel';
-import { analysisFromHandCodes, buildHandFromCodes, calcShantenFromBase } from '../game/advisor';
+import { AdvisorScenarios } from '../components/AdvisorTab';
+import { analyzeHand, analyzePartialHand, codeName } from '../game/skillEngine';
 import { indexToTile, tileCode, tileName, SUIT_NAME, isHongZhong } from '../game/types';
 import { sortHand } from '../game/sort';
-import type { Tile, ScenarioAnalysis, Suit } from '../game/types';
+import type { Tile, Suit } from '../game/types';
+import type { SkillAnalysis } from '../game/skillEngine';
 import { saveSimulator, loadSimulator } from './storage';
 
 interface Props {
@@ -30,6 +31,11 @@ const ROWS: { label: string; codes: string[] }[] = [
 ];
 
 const SUIT_EMOJI: Record<string, string> = { m: '🀋', p: '🀚', s: '🀐', z: '🀀' };
+
+/** 编码 → 构造牌(仅用于渲染, id 无意义) */
+function tileOf(code: string): Tile {
+  return { id: -1, suit: code[0] as Suit, rank: parseInt(code.slice(1), 10) };
+}
 
 // 进张分析结果
 interface DrawImprovement {
@@ -57,15 +63,13 @@ function analyzeDrawImprovements(
     const testHand = [...discardingHandCodes, code];
     if (testHand.length !== 14) continue;
     try {
-      const tiles = buildHandFromCodes(testHand);
-      const shanten = calcShantenFromBase(tiles, 0);
-      const isSelfDraw = shanten === -1;
+      const a = analyzeHand(testHand);
       results.push({
         code,
         name: code,
         count: poolCounts[code],
-        shantenAfter: shanten,
-        isSelfDraw,
+        shantenAfter: a.currentShanten,
+        isSelfDraw: a.isWinNow,
       });
     } catch {
       // skip invalid
@@ -84,13 +88,13 @@ function analyzeDrawImprovements(
 
 /** 当前手牌的向听数 */
 function getCurrentShanten(codes: string[]): number {
-  if (codes.length === 0) return 99;
-  try {
-    const tiles = buildHandFromCodes(codes);
-    return calcShantenFromBase(tiles, 0);
-  } catch {
-    return 99;
+  if (codes.length === 14) {
+    try { return analyzeHand(codes).currentShanten; } catch { return 99; }
   }
+  if (codes.length === 13) {
+    try { return analyzePartialHand(codes).shanten; } catch { return 99; }
+  }
+  return 99;
 }
 
 // ─── 组件 ──────────────────────────────────
@@ -125,7 +129,7 @@ export function Simulator({ onBack }: Props) {
 
   // 智能辅助决策弹层
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const [scenarioAnalysis, setScenarioAnalysis] = useState<ScenarioAnalysis | null>(null);
+  const [skillAnalysis, setSkillAnalysis] = useState<SkillAnalysis | null>(null);
 
   // 确认撤回
   const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null);
@@ -142,7 +146,7 @@ export function Simulator({ onBack }: Props) {
     return counts;
   }, [handCodes, discardedCode]);
 
-  const sortedHandTiles = useMemo(() => sortHand(buildHandFromCodes(handCodes)), [handCodes]);
+  const sortedHandTiles = useMemo(() => sortHand(handCodes.map(tileOf)), [handCodes]);
   const handCount = handCodes.length;
   const handFull = handCount >= 14;
 
@@ -153,12 +157,10 @@ export function Simulator({ onBack }: Props) {
 
   // ── 打开辅助决策面板 ──
   const openAnalysis = useCallback(() => {
-    if (handCodes.length === 0) return;
-    const discardsPool = discardedCode ? [discardedCode] : [];
-    const analysis = analysisFromHandCodes(handCodes, 0, discardsPool);
-    setScenarioAnalysis(analysis);
+    if (handCodes.length !== 14) return;
+    setSkillAnalysis(analyzeHand(handCodes));
     setShowAnalysis(true);
-  }, [handCodes, discardedCode]);
+  }, [handCodes]);
 
   // ── 点击牌池: 添加手牌 ──
   const handlePoolClick = (code: string) => {
@@ -406,7 +408,7 @@ export function Simulator({ onBack }: Props) {
                     className={`tile-pool-item ${disabled ? 'disabled' : ''}`}
                     onClick={() => !disabled && handlePoolClick(code)}
                   >
-                    <TileComp tile={buildHandFromCodes([code])[0]} size={32} />
+                    <TileComp tile={tileOf(code)} size={32} />
                     <div className={`tile-pool-count ${cnt === 0 ? 'zero' : ''}`}>{cnt}</div>
                   </div>
                 );
@@ -497,7 +499,7 @@ export function Simulator({ onBack }: Props) {
         <div className="discard-detail-panel">
           <div className="discard-detail-header">
             <span>
-              🎯 舍出 <b style={{ color: 'var(--accent)' }}>{tileName(buildHandFromCodes([discardedCode])[0])}</b> 后,当前向听:
+              🎯 舍出 <b style={{ color: 'var(--accent)' }}>{codeName(discardedCode)}</b> 后,当前向听:
               <b style={{
                 color: shantenAfterDiscard === 0 ? 'var(--green)' : shantenAfterDiscard === 1 ? 'var(--gold)' : '#aaa',
                 marginLeft: 6,
@@ -528,7 +530,7 @@ export function Simulator({ onBack }: Props) {
                       <div className="simulator-incoming-suit">{SUIT_NAME[suit]}</div>
                       <div className="simulator-incoming-tiles">
                         {suitImps.map((imp) => {
-                          const tile = buildHandFromCodes([imp.code])[0];
+                          const tile = tileOf(imp.code);
                           return (
                             <div
                               key={imp.code}
@@ -571,7 +573,7 @@ export function Simulator({ onBack }: Props) {
         }}>
           <div className="discard-detail-header">
             <span>
-              {drawnIsSelfDraw ? '🎉' : '📥'} 摸入 <b style={{ color: drawnIsSelfDraw ? '#2ecc71' : 'var(--gold)' }}>{drawnCode ? tileName(buildHandFromCodes([drawnCode])[0]) : ''}</b>
+              {drawnIsSelfDraw ? '🎉' : '📥'} 摸入 <b style={{ color: drawnIsSelfDraw ? '#2ecc71' : 'var(--gold)' }}>{drawnCode ? codeName(drawnCode) : ''}</b>
               {drawnIsSelfDraw ? ' → 自摸胡牌!' : ' → 继续推演'}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -589,7 +591,7 @@ export function Simulator({ onBack }: Props) {
               {drawnIsSelfDraw ? '自摸胡牌' : `摸入后手牌 (向听 ${getCurrentShanten(handCodes)})`}
             </div>
             <div className="simulator-drawn-hand">
-              {sortHand(buildHandFromCodes(handCodes)).map((tile, i) => {
+              {sortHand(handCodes.map(tileOf)).map((tile, i) => {
                 const isDrawn = drawnCode && tileCode(tile) === drawnCode;
                 return (
                   <div
@@ -622,17 +624,25 @@ export function Simulator({ onBack }: Props) {
         {discardedCode && phase !== 'select' && (
           <button className="quiz-toolbar-btn" onClick={handleUnDiscard}>↩ 撤销舍牌</button>
         )}
-        <button className="quiz-toolbar-btn" onClick={openAnalysis} disabled={handCodes.length === 0}>🧭 辅助决策</button>
+        <button className="quiz-toolbar-btn" onClick={openAnalysis} disabled={handCodes.length !== 14}>🧭 辅助决策</button>
         <button className="quiz-toolbar-btn" onClick={handleRandomDraw}>🎲 随机摸牌</button>
       </div>
 
       {/* 智能辅助决策弹层 */}
-      {showAnalysis && scenarioAnalysis && (
+      {showAnalysis && skillAnalysis && (
         <div className="quiz-analysis-overlay" onClick={() => setShowAnalysis(false)}>
-          <div onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
-            <SmartAnalysisPanel
-              analysis={scenarioAnalysis}
-              onClose={() => setShowAnalysis(false)}
+          <div className="adv-overlay-card" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
+            <div className="adv-overlay-head">
+              <span>🧭 辅助决策</span>
+              <button className="adv-overlay-close" onClick={() => setShowAnalysis(false)}>✕</button>
+            </div>
+            <AdvisorScenarios
+              analysis={skillAnalysis}
+              onPick={(code) => {
+                const tile = sortedHandTiles.find((t) => tileCode(t) === code);
+                setShowAnalysis(false);
+                if (tile) handleHandClick(tile);
+              }}
             />
           </div>
         </div>
@@ -645,7 +655,7 @@ export function Simulator({ onBack }: Props) {
             <div className="quiz-modal-icon">🔙</div>
             <div className="quiz-modal-title">撤回这张牌?</div>
             <div className="quiz-modal-body">
-              {handCodes[confirmRevoke] ? tileName(buildHandFromCodes([handCodes[confirmRevoke]])[0]) : ''}
+              {handCodes[confirmRevoke] ? codeName(handCodes[confirmRevoke]) : ''}
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button className="quiz-toolbar-btn" onClick={() => setConfirmRevoke(null)}>否</button>

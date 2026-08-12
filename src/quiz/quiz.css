@@ -344,7 +344,7 @@
   z-index: 999;
   padding: 20px;
 }
-.quiz-analysis-overlay .smart-analysis-panel {
+.quiz-analysis-overlay .sap {
   max-width: 700px;
   max-height: 85vh;
   overflow: auto;

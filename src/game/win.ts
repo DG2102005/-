@@ -281,3 +281,6 @@ export function checkTing(tiles: Tile[], meldsCount: number): string[] {
 export function checkSelfDrawWin(hand: Tile[], meldsCount: number): boolean {
   return canWin(hand, meldsCount);
 }
+
+// 计数版精确向听数(供测试/离线工具使用), counts[31] 为红中数
+export { calcShantenFromCounts } from './shanten';

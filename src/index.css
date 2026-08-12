@@ -56,6 +56,39 @@ body {
   align-items: center;
   gap: 14px;
 }
+
+/* 智能模拟页容器 */
+.simulator-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 顶部导航: 对弈 / 智能模拟 */
+.nav-switch {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  padding: 2px;
+}
+.nav-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  padding: 5px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active {
+  background: var(--gold);
+  color: #1a1208;
+  font-weight: 600;
+}
 .toggle-label {
   font-size: 13px;
   cursor: pointer;
@@ -87,6 +120,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
   background:
     radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   border: 8px solid var(--wood);
@@ -95,6 +129,7 @@ body {
   border-radius: 12px;
   box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
   min-width: 0;
+  overflow: hidden;
 }
 .side-panel {
   width: 260px;
@@ -276,6 +311,33 @@ body {
 .logo-text { font-size: 28px; font-weight: 700; letter-spacing: 4px; }
 .logo-sub { font-size: 12px; letter-spacing: 2px; }
 
+/* 局终剩余牌墙(信息栏下方卡片, 横向多行排列, 与AI翻牌布局一致) */
+.wall-remain {
+  margin-top: 8px;
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.25);
+  padding: 6px;
+  text-align: center;
+}
+.wall-remain-title {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.wall-remain-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px;
+}
+
 .discard-zone {
   display: flex;
   flex-wrap: wrap;
@@ -289,6 +351,7 @@ body {
 
 /* ===== 人类手牌 ===== */
 .human-seat {
+  position: relative;
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(212,175,55,0.3);
   border-radius: 8px 8px 0 0;
@@ -327,13 +390,27 @@ body {
   border-radius: 3px;
 }
 
-/* ===== 操作面板 ===== */
+/* ===== 操作面板(悬浮于手牌上方, 不挤占布局) ===== */
 .action-panel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 10px);
+  z-index: 60;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  background: rgba(22,14,6,0.95);
+  border: 1px solid rgba(212,175,55,0.45);
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+  animation: actionPop 0.15s ease;
+}
+@keyframes actionPop {
+  from { transform: translateX(-50%) translateY(8px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 .action-prompt { font-size: 12px; color: var(--gold); }
 .action-buttons { display: flex; gap: 6px; }
@@ -430,57 +507,13 @@ body {
 .welcome-title { font-size: 32px; color: var(--gold); font-weight: 700; letter-spacing: 4px; }
 .welcome-desc { font-size: 14px; color: var(--text-dim); margin-top: 8px; }
 
-/* ===== 结束横幅(牌桌中央缩小版+自动折叠) ===== */
-.result-banner {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.45);
-  background: rgba(0,0,0,0.78);
-  color: var(--gold);
-  font-size: 20px;
-  font-weight: 700;
-  padding: 14px 26px;
-  border: 2px solid var(--gold);
-  border-radius: 10px;
-  z-index: 95;
-  text-align: center;
-  animation: popShrink 0.25s ease;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-  max-width: 360px;
-  cursor: pointer;
-}
-@keyframes popShrink {
-  from { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
-  to   { transform: translate(-50%, -50%) scale(0.45); opacity: 1; }
-}
-.result-banner .result-sub { font-size: 11px; opacity: 0.85; margin-top: 4px; font-weight: 400; }
-.result-banner .result-expand-hint { font-size: 10px; opacity: 0.6; margin-top: 2px; font-weight: 400; }
-
-/* 折叠后的右下角徽标(在手牌上方300px位置) */
-.result-badge {
-  position: fixed;
-  bottom: 300px; right: 24px;
-  background: linear-gradient(135deg, var(--gold), #b59318);
-  color: #2a1810;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  z-index: 96;
-  cursor: pointer;
-  box-shadow: 0 3px 12px rgba(212,175,55,0.5);
-  animation: slideIn 0.3s ease;
-}
-.result-badge:hover { filter: brightness(1.08); }
-
 /* 滚动条 */
 .log-list::-webkit-scrollbar { width: 5px; }
 .log-list::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 3px; }
 
-/* ===== 新摸牌/建议牌标记 ===== */
+/* ===== 新摸牌标记 ===== */
 .tile-slot { position: relative; display: inline-flex; align-items: flex-end; }
-.drawn-mark, .rec-mark {
+.drawn-mark {
   position: absolute;
   top: -10px;
   left: 50%;
@@ -493,7 +526,6 @@ body {
   font-weight: 700;
 }
 .drawn-mark { background: #ff5252; color: #fff; }
-.rec-mark { background: var(--gold); color: #1a1a1a; }
 
 /* ===== 标签栏 ===== */
 .tab-bar {
@@ -611,31 +643,6 @@ body {
 .mistake-header { color: #ff8a80; font-weight: 700; font-size: 12px; margin-bottom: 3px; }
 .mistake-body { color: var(--text); margin-bottom: 3px; }
 .mistake-suggest { color: #5dffa0; font-size: 11px; }
-
-/* 失误浮层(放在手牌上方,不遮挡) */
-.mistake-toast {
-  position: fixed;
-  bottom: 300px; right: 24px;
-  background: rgba(201,48,44,0.92);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 8px;
-  box-shadow: 0 3px 14px rgba(0,0,0,0.4);
-  z-index: 90;
-  cursor: pointer;
-  max-width: 260px;
-  animation: slideIn 0.25s ease;
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-.mistake-toast.fade-out { opacity: 0; pointer-events: none; }
-@keyframes slideIn {
-  from { transform: translateX(120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.toast-title { font-weight: 700; margin-bottom: 4px; }
-.toast-body { font-size: 12px; line-height: 1.4; }
-.toast-action { font-size: 11px; margin-top: 4px; opacity: 0.85; }
 
 /* ===== 复盘面板 ===== */
 .review-panel {
@@ -1179,60 +1186,8 @@ body {
   word-break: break-all;
 }
 
-/* ========== 请求辅助决策按钮 ========== */
-.request-analysis-btn {
-  background: linear-gradient(135deg, #2a7de1, #1a5cb0);
-  color: #fff;
-  border: none;
-  padding: 5px 14px;
-  border-radius: 16px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  margin-top: 4px;
-  box-shadow: 0 2px 8px rgba(42,125,225,0.4);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.request-analysis-btn:hover {
-  filter: brightness(1.15);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(42,125,225,0.5);
-}
-
-/* ========== 辅助决策浮层 ========== */
-.analysis-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.15s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.analysis-container {
-  width: 92%;
-  max-width: 520px;
-  max-height: 85vh;
-  overflow-y: auto;
-  background: #1a1208;
-  border: 1px solid rgba(212,175,55,0.3);
-  border-radius: 12px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-  animation: slideUp 0.2s ease;
-}
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-
-/* ========== SmartAnalysisPanel ========== */
-.smart-analysis-panel {
+/* ========== SmartAnalysisPanel(竞品布局, quiz模块使用) ========== */
+.sap {
   padding: 12px;
   font-size: 12px;
   color: var(--text);
@@ -1264,17 +1219,13 @@ body {
   border-radius: 6px;
   padding: 8px;
   margin-bottom: 8px;
-}
-.sap-shanten {
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-.sap-shanten b { color: var(--gold); }
-.sap-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 12px;
-  color: var(--text-dim);
-  line-height: 1.5;
 }
+.sap-summary b { color: var(--gold); }
+.sap-summary-rec { color: var(--text-dim); font-size: 11px; }
 
 .sap-hand {
   margin-bottom: 10px;
@@ -1296,116 +1247,279 @@ body {
   gap: 8px;
 }
 
-.scenario-card {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(212,175,55,0.12);
+/* 场景卡片: 左打右分析 竞品风格 */
+.sap-card {
+  display: flex;
+  gap: 10px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(212,175,55,0.1);
   border-radius: 8px;
   padding: 8px;
   transition: border-color 0.2s;
 }
-.scenario-card:hover {
-  border-color: rgba(212,175,55,0.3);
+.sap-card:hover {
+  border-color: rgba(212,175,55,0.25);
 }
-.scenario-best {
+.sap-card-best {
   border-color: var(--gold);
-  background: rgba(212,175,55,0.08);
+  background: rgba(212,175,55,0.06);
 }
 
-.scenario-discard {
+/* 左侧: 打出的牌 */
+.sap-card-left {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 50px;
 }
-.scenario-discard-label {
+.sap-card-label {
   font-size: 11px;
   color: var(--text-dim);
   font-weight: 600;
 }
-.scenario-discard-name {
+
+/* 右侧: 分析结果 */
+.sap-card-right {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 计算结果行 */
+.sap-card-result {
   font-size: 12px;
   color: var(--text);
-  font-weight: 600;
+  margin-bottom: 4px;
 }
+.sap-card-result b { color: var(--gold); }
 
-.scenario-incoming {
-  margin-bottom: 6px;
-}
-.scenario-incoming-label {
+/* 可听/可进行 */
+.sap-card-ting {
   font-size: 11px;
   color: var(--text-dim);
   margin-bottom: 4px;
 }
-.scenario-incoming-label b {
-  color: #5dffa0;
-}
-.scenario-incoming-grid {
+.sap-card-ting b { color: #5dffa0; }
+
+/* 进张牌面网格 */
+.sap-card-ting-tiles {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-}
-.scenario-no-incoming {
-  color: var(--text-dim);
-  font-size: 11px;
-  font-style: italic;
+  gap: 2px;
+  margin-top: 3px;
 }
 
-.scenario-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-.scenario-result {
+/* 打出此牌按钮 */
+.sap-card-btn {
+  width: 100%;
+  margin-top: 4px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
   font-size: 11px;
-  color: var(--text);
-}
-.scenario-danger {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 8px;
   font-weight: 600;
 }
-.danger-0 { background: rgba(93,255,160,0.15); color: #5dffa0; }
-.danger-1 { background: rgba(255,193,7,0.15); color: #ffc107; }
-.danger-2 { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.sap-card-btn:hover { filter: brightness(1.1); }
 
-.scenario-metrics {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-.metric {
-  display: flex;
-  gap: 4px;
+.sap-more {
   font-size: 10px;
+  color: var(--text-dim);
+  padding: 2px 4px;
 }
-.metric-label { color: var(--text-dim); }
-.metric-value { color: var(--gold); font-weight: 600; }
 
-.scenario-reasoning {
+/* ===== 辅助决策面板 (skill 引擎, 侧栏/弹层共用) ===== */
+.adv-tab {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adv-tab-title {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.adv-tab-note {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.adv-summary {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+.adv-summary b { color: var(--gold); }
+.adv-summary .adv-ting { color: #5dffa0; }
+.adv-summary-rec { color: var(--text-dim); font-size: 11px; }
+
+.adv-hand {
+  margin-bottom: 2px;
+}
+.adv-hand-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+}
+.adv-hand-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+}
+
+.adv-scenarios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 场景卡片: 左打右分析 */
+.adv-card {
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  transition: border-color 0.2s;
+}
+.adv-card:hover { border-color: rgba(212, 175, 55, 0.25); }
+.adv-card-best {
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.06);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+}
+.adv-card-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 54px;
+}
+.adv-card-label {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 700;
+}
+.adv-card-name {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.adv-card-right {
+  flex: 1;
+  min-width: 0;
+}
+.adv-card-result {
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.adv-card-result b { color: var(--gold); }
+.adv-card-result b.adv-ting { color: #5dffa0; }
+.adv-card-ting {
   font-size: 11px;
   color: var(--text-dim);
-  line-height: 1.4;
-  margin-top: 4px;
+  margin-bottom: 4px;
 }
-
-.scenario-exec-btn {
-  width: 100%;
+.adv-card-ting b { color: #5dffa0; }
+.adv-card-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.adv-card-tile {
+  position: relative;
+}
+.adv-card-remain {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  background: #1a1208;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--gold);
+  font-size: 8px;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.adv-card-btn {
+  width: 88px;
   margin-top: 6px;
   background: var(--accent);
   color: #fff;
   border: none;
-  padding: 5px;
+  padding: 4px 0;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
-.scenario-exec-btn:hover { filter: brightness(1.1); }
+.adv-card-btn:hover { filter: brightness(1.1); }
+.adv-more {
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 2px 4px;
+  align-self: flex-end;
+}
+.adv-empty {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 8px;
+  text-align: center;
+}
+.adv-win {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.35);
+  color: #5dffa0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  text-align: center;
+}
+.adv-summary .adv-win-txt { color: #5dffa0; }
 
-/* 场景分析滚动条 */
-.analysis-container::-webkit-scrollbar { width: 5px; }
-.analysis-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 3px; }
+/* Simulator 弹层卡片 */
+.adv-overlay-card {
+  background: #20160c;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
+  padding: 12px;
+  max-width: 520px;
+  width: 92vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.adv-overlay-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 14px;
+}
+.adv-overlay-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.adv-overlay-close:hover { color: var(--text); }
 
 

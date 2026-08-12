@@ -35,17 +35,17 @@ export const HUMAN_SEAT: Seat = 1;
 // 玩家名称
 export const PLAYER_NAMES = ['东家AI', '玩家(南)', '西家AI', '北家AI'];
 
-// 下一座位(逆时针)
+// 下一座位(逆时针: 1南→0东→3北→2西→1南)
 export function nextSeat(seat: Seat): Seat {
-  return ((seat + 1) % 4) as Seat;
+  return ((seat + 3) % 4) as Seat;
 }
 
 // 前一座位
 export function prevSeat(seat: Seat): Seat {
-  return ((seat + 3) % 4) as Seat;
+  return ((seat + 1) % 4) as Seat;
 }
 
-// 其他三家(按行动顺序)
+// 其他三家(按逆时针行动顺序)
 export function otherSeats(seat: Seat): Seat[] {
   return [nextSeat(seat), ((seat + 2) % 4) as Seat, prevSeat(seat)];
 }

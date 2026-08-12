@@ -3,42 +3,19 @@
 import type { GameState, PlayerState, Seat, Tile, AdviceData, MistakeAlert, ScenarioAnalysis, DiscardScenario } from './types';
 import { tileCode, isHongZhong, tileName, tileIndex, indexToTile } from './types';
 import { canWin, checkTing } from './win';
+import { calcShantenFromBase } from './shanten';
 import { getStrategyHint, getAllStrategyHints, getStrategyLibStats } from './strategyLib';
 import type { StrategyContext } from './strategyLib';
 import { loadCorrections, correctionWeightedAdvice, hintFromCorrections } from './correctionLib';
 
-const ALL_CODES: string[] = [];
-for (let i = 0; i < 34; i++) {
-  ALL_CODES.push(tileCode(indexToTile(i)));
-}
-
-// 计算向听数(0=听牌, 1=一向听, 2+=远)
-// 简化实现: 基于 checkTing 与"弃一牌后是否听"递推
+export { calcShantenFromBase };
 export function calcShanten(hand: Tile[], meldsCount: number): number {
-  const needMelds = 4 - meldsCount;
-  const baseLen = needMelds * 3 + 1; // 听牌时手牌长度
-  if (hand.length !== baseLen) {
-    // 非13张(如14张),先算听牌长度
-    if (hand.length === needMelds * 3 + 2) {
-      return canWin(hand, meldsCount) ? -1 : calcShantenFromBase(hand.filter((_, i) => i < hand.length - 1), meldsCount) > 0 ? 0 : 0;
-    }
-    return 99;
-  }
   return calcShantenFromBase(hand, meldsCount);
 }
 
-export function calcShantenFromBase(hand: Tile[], meldsCount: number): number {
-  // 0: 听牌
-  if (checkTing(hand, meldsCount).length > 0) return 0;
-  // 1: 弃任一非红中牌后能听
-  for (const t of hand) {
-    if (isHongZhong(t)) continue;
-    const rest = hand.filter((x) => x.id !== t.id);
-    if (checkTing(rest, meldsCount).length > 0) return 1;
-  }
-  // 2: 弃+摸能听 (粗略: 弃任一非红中后,再加任一非已用尽牌能听)
-  // 性能考虑: 只做一层枚举
-  return 2;
+const ALL_CODES: string[] = [];
+for (let i = 0; i < 34; i++) {
+  ALL_CODES.push(tileCode(indexToTile(i)));
 }
 
 // 构建桌面已见牌统计(不含自己手牌,用于危险度与剩余张数估算)
@@ -312,6 +289,91 @@ export function dangerLevel(state: GameState, tile: Tile): number {
   return Math.max(0, 4 - seen - 1); // 0=安全, 3=极危险(从未见过)
 }
 
+// ========== 手牌结构分析(面子/对子/连坎搭/搭子/孤张) ==========
+interface HandStructure {
+  melds: number;   // 成型面子(刻子+顺子)
+  pairs: number;   // 对子(含红中虚拟对)
+  kanchan: number; // 连坎复合搭(357/246/468, 间隔2的3张)
+  taatsu: number;  // 普通搭子(两面/嵌张/边张, 含红中补)
+  singles: number; // 孤张
+}
+
+function analyzeStructure(hand: Tile[]): HandStructure {
+  const counts = new Array(34).fill(0);
+  let wild = 0;
+  for (const t of hand) {
+    if (isHongZhong(t)) wild++;
+    else counts[tileIndex(t)]++;
+  }
+  const st: HandStructure = { melds: 0, pairs: 0, kanchan: 0, taatsu: 0, singles: 0 };
+
+  // 1) 刻子
+  for (let i = 0; i < 34; i++) {
+    while (counts[i] >= 3) { st.melds++; counts[i] -= 3; }
+  }
+  // 2) 顺子(贪心, 低位优先)
+  for (let b = 0; b < 3; b++) {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let r = 0; r < 7; r++) {
+        const i = b * 9 + r;
+        if (counts[i] > 0 && counts[i + 1] > 0 && counts[i + 2] > 0) {
+          counts[i]--; counts[i + 1]--; counts[i + 2]--;
+          st.melds++; changed = true;
+        }
+      }
+    }
+  }
+  // 3) 对子
+  for (let i = 0; i < 34; i++) {
+    st.pairs += counts[i] >> 1;
+    counts[i] %= 2;
+  }
+  // 4) 连坎搭(间隔2的3张: 357/246/468)
+  for (let b = 0; b < 3; b++) {
+    for (let r = 0; r < 5; r++) {
+      const i = b * 9 + r;
+      if (counts[i] > 0 && counts[i + 2] > 0 && counts[i + 4] > 0) {
+        counts[i]--; counts[i + 2]--; counts[i + 4]--;
+        st.kanchan++;
+      }
+    }
+  }
+  // 5) 普通二张搭子(相邻/间隔2)
+  for (let b = 0; b < 3; b++) {
+    for (let r = 0; r < 8; r++) {
+      const i = b * 9 + r;
+      while (counts[i] > 0 && counts[i + 1] > 0) { counts[i]--; counts[i + 1]--; st.taatsu++; }
+    }
+    for (let r = 0; r < 7; r++) {
+      const i = b * 9 + r;
+      while (counts[i] > 0 && counts[i + 2] > 0) { counts[i]--; counts[i + 2]--; st.taatsu++; }
+    }
+  }
+  // 6) 红中补齐: 1红+1孤张=1搭, 2红=1虚对
+  let singlesCount = 0;
+  for (let i = 0; i < 34; i++) singlesCount += counts[i];
+  const fills = Math.min(singlesCount, wild);
+  st.taatsu += fills;
+  singlesCount -= fills;
+  const wildLeft = wild - fills;
+  if (wildLeft >= 2) st.pairs++;
+  if (wildLeft % 2 === 1) st.singles++;
+  st.singles += singlesCount;
+  return st;
+}
+
+// 四大极速听牌模型检测
+// 一对三成牌 / 两对半 / 四人抬轿 / 六人抬轿(双红中+4搭+1对)
+function detectModel(st: HandStructure, wild: number): string | null {
+  if (wild >= 2 && st.pairs >= 1 && st.melds + st.taatsu >= 4) return '六人抬轿';
+  if (st.pairs === 0 && st.melds + st.taatsu === 4) return '四人抬轿';
+  if (st.pairs >= 2 && st.taatsu >= 1) return '两对半';
+  if (st.melds === 3 && st.pairs >= 1) return '一对三成';
+  return null;
+}
+
 // ========== 辅助决策: 按需场景分析 ==========
 
 // 牌代码(m1等)转线性索引(0-33)
@@ -332,94 +394,158 @@ export function buildHandFromCodes(codes: string[]): Tile[] {
   }).filter((t): t is Tile => t !== null);
 }
 
-// 核心分析: 给定手牌代码,生成多个弃牌场景对比
-export function analysisFromHandCodes(handCodes: string[]): ScenarioAnalysis {
-  const meldsCount = 0; // 场景分析默认无副露(选牌推演模式)
+// 核心分析: 给定手牌代码+牌桌信息,生成多个弃牌场景对比
+// 目标: 最快听牌、最早自摸、进张最多(去重统计, 计入各家已见)
+export function analysisFromHandCodes(
+  handCodes: string[],
+  allDiscards: string[] = [],
+): ScenarioAnalysis {
+  const meldsCount = 0;
   const hand = buildHandFromCodes(handCodes);
 
-  // 当前向听
-  const baseLen = (4 - meldsCount) * 3 + 1;
+  // 当前向听数(精确: 平胡/七小对取min, 红中百搭)
   let currentShanten: number;
-  if (hand.length === baseLen) {
-    const ting = checkTing(hand, meldsCount);
-    currentShanten = ting.length > 0 ? 0 : calcShantenFromBase(hand, meldsCount);
-  } else if (hand.length === baseLen + 1) {
-    // 14张: 先判断是否已胡, 否则算 baseLen 向听
-    currentShanten = canWin(hand, meldsCount) ? -1 : calcShantenFromBase(hand.slice(0, baseLen), meldsCount);
+  if (hand.length === 14) {
+    currentShanten = canWin(hand, meldsCount) ? -1 : calcShantenFromBase(hand, meldsCount);
+  } else if (hand.length === 13) {
+    currentShanten = calcShantenFromBase(hand, meldsCount);
   } else {
     currentShanten = 99;
   }
 
-  // 构建公共已见牌(用于计算进张剩余)
-  const publicSeen = new Array(34).fill(0);
+  // 已见牌 = 其他三家舍牌+碰杠(由调用方传入), 自身手牌不重复扣减
+  const seenCount = new Array(34).fill(0);
+  for (const code of allDiscards) {
+    const idx = ALL_CODES.indexOf(code);
+    if (idx >= 0) seenCount[idx]++;
+  }
+
+  // 剩余可摸 = 4 − 打出后手牌持有 − 其他三家已见 − (弃出同码1张)
+  // 红中同样计入(万能百搭, 摸到即有用)
+  function remainOf(code: string, rest: Tile[], ownDiscarded: boolean): number {
+    const idx = ALL_CODES.indexOf(code);
+    if (idx < 0) return 0;
+    let inHand = 0;
+    for (const t of rest) {
+      if (code === 'z5' ? isHongZhong(t) : tileCode(t) === code) inHand++;
+    }
+    let r = 4 - inHand - seenCount[idx];
+    if (ownDiscarded) r -= 1;
+    return Math.max(0, r);
+  }
+
+  // 有效进张(去重): 摸进后向听必须严格降低, 同门只统计1次
+  function calcImprovements(rest: Tile[], afterSh: number): Array<{ code: string; remain: number }> {
+    const result: Array<{ code: string; remain: number }> = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < 34; i++) {
+      const candidate = indexToTile(i);
+      const test = rest.concat(candidate);
+      const testSh = calcShantenFromBase(test, meldsCount); // 14张: 已胡=-1 或 弃一后向听
+      if (testSh >= afterSh) continue; // 未推进
+      const code = tileCode(candidate);
+      if (seen.has(code)) continue; // 去重: 重叠搭子共享进张只计1次
+      seen.add(code);
+      const rem = remainOf(code, rest, false);
+      if (rem > 0) result.push({ code, remain: rem });
+    }
+    return result;
+  }
 
   const scenarios: DiscardScenario[] = [];
+  const handStructure = analyzeStructure(hand);
+  const handWild = hand.filter(isHongZhong).length;
+  const curModel = detectModel(handStructure, handWild);
+
   for (const t of hand) {
-    if (isHongZhong(t)) continue; // 红中不打
+    if (isHongZhong(t)) continue; // 红中绝不打
 
     const code = tileCode(t);
     const rest = hand.filter((x) => x.id !== t.id);
+    const restWild = rest.filter(isHongZhong).length;
+
+    // 打出后的向听
     const afterTing = checkTing(rest, meldsCount);
     const afterShanten = afterTing.length > 0 ? 0 : calcShantenFromBase(rest, meldsCount);
 
-    // 进张: 摸到哪些牌能推进(向听更低)
-    const improvementSet = new Set<string>();
-    for (let idx = 0; idx < 34; idx++) {
-      const candidate = indexToTile(idx);
-      const test = rest.concat(candidate);
-      const testTing = checkTing(test, meldsCount);
-      const testShanten = testTing.length > 0 ? 0 : calcShantenFromBase(test, meldsCount);
-      if (testShanten < afterShanten || testTing.length > 0) {
-        improvementSet.add(tileCode(candidate));
-      }
-    }
-    const improvementCodes = Array.from(improvementSet);
-
-    // 进张门数和张数
+    // 进张统计: 听牌展示可胡, 非听统计去重有效进张
+    let improvements: Array<{ code: string; remain: number }> = [];
+    let tingTiles: string[] = [];
     let tileCount = 0;
-    for (const imp of improvementCodes) {
-      const impIdx = ALL_CODES.indexOf(imp);
-      const handCount = rest.filter((x) => tileCode(x) === imp).length;
-      const remain = Math.max(0, 4 - handCount - publicSeen[impIdx]);
-      tileCount += remain;
+    if (afterShanten === 0) {
+      tingTiles = afterTing;
+      const seen = new Set<string>();
+      for (const c of afterTing) {
+        if (seen.has(c)) continue;
+        seen.add(c);
+        tileCount += remainOf(c, rest, false);
+      }
+    } else {
+      improvements = calcImprovements(rest, afterShanten);
+      tileCount = improvements.reduce((s, x) => s + x.remain, 0);
     }
+    const improvementCodes = improvements.map((x) => x.code);
+    const categoryCount = afterShanten === 0 ? tingTiles.length : improvements.length;
 
-    // 期望价值: 听牌张数*50 + 进张数*3 - 向听*1000
-    const expectedValue = afterTing.length * 50 + tileCount * 3 - afterShanten * 1000;
+    // 丢张损失: 弃牌仍留在牌墙的张数(弃了就再也用不上)
+    const loss = remainOf(code, rest, true);
 
-    // 危险度(简化: 基于牌面类型)
-    const dLevel = t.suit === 'z' ? (isHongZhong(t) ? 0 : 1) : (t.rank >= 3 && t.rank <= 7 ? 1 : 0);
+    // 结构对比: 打出后哪些核心结构被拆
+    const stRest = analyzeStructure(rest);
+    let corePenalty = 0;
+    // 拆对子: 原对子<=2 时保对优先(1-2对拆搭不拆对; 3对+才允许拆对)
+    if (handStructure.pairs > stRest.pairs && handStructure.pairs <= 2) corePenalty += 1;
+    // 拆连坎复合搭
+    if (handStructure.kanchan > stRest.kanchan) corePenalty += 1;
+    // 破坏极速模型
+    const newModel = detectModel(stRest, restWild);
+    if (curModel && !newModel) corePenalty += 1;
+
+    // 打分(终极公式): 向听 > 去重门数 > 张数 > 丢张/结构惩罚 > 模型奖励
+    const expectedValue =
+      -afterShanten * 1000
+      + (afterShanten === 0 ? 200 : 0)
+      + categoryCount * 12
+      + tileCount * 3
+      - loss * 10
+      - corePenalty * 120
+      + (newModel ? 80 : 0)
+      + (meldsCount === 0 && stRest.pairs >= 4 ? 60 : 0); // 七小对双线保对
 
     // 推理理由
     let reasoning = '';
-    if (afterTing.length > 0) {
-      const tingNames = afterTing.map((c) => tileName(indexToTile(ALL_CODES.indexOf(c))));
-      reasoning = `打出后听${afterTing.length}张: ${tingNames.join('、')}`;
-    } else if (afterShanten === 0) {
-      reasoning = '打出后维持听牌';
+    if (afterShanten === 0) {
+      reasoning = `听${tingTiles.length}门${tileCount}张`;
     } else {
-      reasoning = `打出后${afterShanten}向听,进${improvementCodes.length}门${tileCount}张`;
+      reasoning = `${afterShanten}向听,进${improvements.length}门${tileCount}张`;
     }
+    if (newModel) reasoning += ` [${newModel}]`;
+    if (corePenalty > 0) reasoning += ' [拆核心]';
 
     scenarios.push({
       discardCode: code,
       discardName: tileName(t),
       shantenAfter: afterShanten,
       improvementCodes,
-      categoryCount: improvementCodes.length,
+      tingTiles,
+      categoryCount,
       tileCount,
       expectedValue,
-      dangerLevel: dLevel,
+      dangerLevel: 0,
       reasoning,
     });
   }
 
-  // 按评分排序(高→低)
-  scenarios.sort((a, b) => b.expectedValue - a.expectedValue);
+  // 排序: 向听低 → 去重进张多 → 可胡门多
+  scenarios.sort((a, b) => {
+    if (a.shantenAfter !== b.shantenAfter) return a.shantenAfter - b.shantenAfter;
+    if (b.tileCount !== a.tileCount) return b.tileCount - a.tileCount;
+    return b.tingTiles.length - a.tingTiles.length;
+  });
 
   return {
     handCodes: handCodes.slice(),
     currentShanten,
-    scenarios: scenarios.slice(0, 6), // 最多展示6个方案
+    scenarios: scenarios.slice(0, 6),
   };
 }

@@ -1,6 +1,8 @@
 // 游戏信息面板
 import type { GameState } from '../game/types';
 import { SEAT_NAME } from '../game/types';
+import { Tile } from './Tile';
+import { sortHand } from '../game/sort';
 
 interface Props {
   state: GameState;
@@ -19,6 +21,11 @@ export function GameInfo({ state, onNewRound }: Props) {
     gameover: state.isDraw ? '流局' : (state.winner !== null ? `${SEAT_NAME[state.winner]}胡牌` : '结束'),
   }[state.phase];
 
+  // 局终: 剩余牌墙翻开(横向排列, 与AI翻牌布局一致)
+  const wall = state.phase === 'gameover' && state.deck.length > 0
+    ? sortHand(state.deck)
+    : null;
+
   return (
     <div className="game-info">
       <div className="info-row"><span>局数</span><b>{state.round}</b></div>
@@ -28,6 +35,16 @@ export function GameInfo({ state, onNewRound }: Props) {
       <div className="info-row"><span>剩余牌</span><b>{remaining}</b></div>
       {state.phase === 'gameover' && (
         <button className="new-round-btn" onClick={onNewRound}>开始新一局</button>
+      )}
+      {wall && (
+        <div className="wall-remain">
+          <div className="wall-remain-title">剩余牌墙 · {wall.length} 张</div>
+          <div className="wall-remain-tiles">
+            {wall.map((t) => (
+              <Tile key={t.id} tile={t} size={22} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

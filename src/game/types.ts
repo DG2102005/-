@@ -253,6 +253,7 @@ export interface DiscardScenario {
   discardName: string;         // 打出的牌中文名
   shantenAfter: number;        // 打出后的向听数
   improvementCodes: string[];  // 可进张的牌代码(摸到这些牌能推进)
+  tingTiles: string[];         // 听牌时可胡的牌代码(shantenAfter=0时有值)
   categoryCount: number;       // 进张门数(几种不同的牌)
   tileCount: number;           // 进张总张数
   expectedValue: number;       // 期望价值评分
