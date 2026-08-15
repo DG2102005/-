@@ -13,9 +13,7 @@ interface Props {
 function shantenText(shanten: number): string {
   if (shanten < 0) return '已胡';
   if (shanten === 0) return '听牌';
-  if (shanten === 1) return '1轮胡';
-  if (shanten === 2) return '2轮胡';
-  return `${shanten}轮胡`;
+  return `${shanten}进听`;
 }
 
 function codeToTile(code: string): TileType {

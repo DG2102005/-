@@ -87,37 +87,41 @@ export function getActionsForDiscard(
 }
 
 // 自己摸牌后可执行的操作(暗杠/补杠)
+// 注意: 暗杠需扫描整手牌(任一牌型满4张即可杠), 不限于刚摸的那张
 export function getSelfActions(player: PlayerState, drawn: Tile): ActionOption[] {
   const options: ActionOption[] = [];
   const hand = player.hand;
-  // 暗杠: 手中已有4张同款(含刚摸的)
-  const code = tileCode(drawn);
-  // 统计手牌(含drawn)中该代码非红中数量
-  let cnt = 0;
-  const sameTiles: Tile[] = [];
+  // 按代码分组统计(含刚摸的牌), 排除红中(百搭不可杠)
+  const groups: Record<string, Tile[]> = {};
   for (const t of hand) {
-    if (!isHongZhong(t) && tileCode(t) === code) {
-      cnt++;
-      sameTiles.push(t);
+    if (isHongZhong(t)) continue;
+    const code = tileCode(t);
+    if (!groups[code]) groups[code] = [];
+    groups[code].push(t);
+  }
+  // 暗杠: 手牌中任一牌型满4张(无论是否刚摸到)
+  for (const code of Object.keys(groups)) {
+    if (groups[code].length >= 4) {
+      options.push({
+        type: 'angang',
+        tile: groups[code][3],
+        seat: player.seat,
+        meld: { type: 'angang', tiles: groups[code].slice(0, 4) },
+      });
     }
   }
-  if (cnt >= 4) {
-    options.push({
-      type: 'angang',
-      tile: drawn,
-      seat: player.seat,
-      meld: { type: 'angang', tiles: sameTiles.slice(0, 4) },
-    });
-  }
-  // 补杠: 已碰过该牌，现在摸到第4张
+  // 补杠: 已碰过某牌, 现在手中有第4张(含刚摸的)
   for (const meld of player.melds) {
-    if (meld.type === 'peng' && tileCode(meld.tiles[0]) === code) {
-      options.push({
-        type: 'bugang',
-        tile: drawn,
-        seat: player.seat,
-        meld: { type: 'bugang', tiles: [...meld.tiles, drawn] },
-      });
+    if (meld.type === 'peng') {
+      const code = tileCode(meld.tiles[0]);
+      if (groups[code] && groups[code].length >= 1) {
+        options.push({
+          type: 'bugang',
+          tile: groups[code][0],
+          seat: player.seat,
+          meld: { type: 'bugang', tiles: [...meld.tiles, groups[code][0]] },
+        });
+      }
     }
   }
   return options;

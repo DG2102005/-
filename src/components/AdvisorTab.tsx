@@ -1,10 +1,10 @@
 // 侧栏辅助决策面板 — 基于 skill 引擎（轻量，非 advisor）
-// 可视化：打哪张 → 计算结果(几轮胡) → 可听/可进 N 门 N 张 → 进张牌面
+// 可视化：打哪张 → 计算结果(几进听) → 可听/可进 N 门 N 张 → 进张牌面
 import { useMemo } from 'react';
 import type { Tile } from '../game/types';
 import { tileCode, isHongZhong } from '../game/types';
 import {
-  analyzeHand, analyzePartialHand, codeName,
+  analyzeHand, analyzePartialHand, codeName, toSkillCode,
   type SkillAnalysis, type SkillScenario,
 } from '../game/skillEngine';
 import { Tile as TileComp } from './Tile';
@@ -20,9 +20,7 @@ export function codeToTile(code: string): Tile {
 export function shantenText(s: number): string {
   if (s < 0) return '已胡';
   if (s === 0) return '听牌';
-  if (s === 1) return '1轮胡';
-  if (s === 2) return '2轮胡';
-  return `${s}轮胡`;
+  return `${s}进听`; // 进听 = 还需进s张有效牌即可听牌(标准向听数)
 }
 
 // ─── 场景卡片列表（供侧栏 / Simulator 弹层复用） ──
@@ -119,27 +117,39 @@ interface Props {
   meldCount: number;       // 副露数
   canDiscard: boolean;     // 当前可出牌
   onDiscard: (tileId: number) => void;
+  seenTiles?: Tile[];      // 已见牌(各家舍牌/副露), 用于扣除剩余张数
 }
 
-export function AdvisorTab({ hand, meldCount, canDiscard, onDiscard }: Props) {
+export function AdvisorTab({ hand, meldCount, canDiscard, onDiscard, seenTiles }: Props) {
   const expectLen = 14 - 3 * meldCount;
+
+  // 已见牌计数(skill码): 各家已舍出的 + 副露明牌; 自己手牌已含在分析中
+  const seenCounts = useMemo(() => {
+    const sc: Record<number, number> = {};
+    if (!seenTiles) return sc;
+    for (const t of seenTiles) {
+      const k = toSkillCode(tileCode(t));
+      sc[k] = (sc[k] ?? 0) + 1;
+    }
+    return sc;
+  }, [seenTiles]);
 
   const { status, analysis, partial } = useMemo(() => {
     const codes = hand.map((t) => (isHongZhong(t) ? 'z5' : tileCode(t)));
     if (codes.length === expectLen) {
       try {
-        const a = analyzeHand(codes, meldCount);
+        const a = analyzeHand(codes, meldCount, seenCounts);
         return { status: 'full' as const, analysis: a, partial: null };
       } catch {
         return { status: 'empty' as const, analysis: null, partial: null };
       }
     }
     if (codes.length === expectLen - 1) {
-      const p = analyzePartialHand(codes, meldCount);
+      const p = analyzePartialHand(codes, meldCount, seenCounts);
       return { status: 'partial' as const, analysis: null, partial: p };
     }
     return { status: 'empty' as const, analysis: null, partial: null };
-  }, [hand, expectLen, meldCount]);
+  }, [hand, expectLen, meldCount, seenCounts]);
 
   const handlePick = (discardCode: string): void => {
     if (!canDiscard) return;

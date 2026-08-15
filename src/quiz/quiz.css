@@ -549,6 +549,56 @@
   font-weight: 600;
   margin-bottom: 4px;
 }
+
+/* 积分栏 */
+.score-panel {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 8px 0 12px;
+}
+.score-panel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+.score-panel-label { font-size: 12px; color: var(--text-dim); }
+.score-panel-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.1;
+}
+.score-panel-value.cum { color: #2ecc71; }
+.score-panel-sub { font-size: 11px; color: var(--text-dim); }
+.score-detail {
+  font-size: 13px;
+  color: var(--text);
+  background: rgba(46,204,113,0.08);
+  border: 1px solid rgba(46,204,113,0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.score-detail-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 .simulator-toolbar {
   display: flex;
   gap: 8px;

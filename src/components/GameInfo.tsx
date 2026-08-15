@@ -3,13 +3,20 @@ import type { GameState } from '../game/types';
 import { SEAT_NAME } from '../game/types';
 import { Tile } from './Tile';
 import { sortHand } from '../game/sort';
+import { ScorePanel } from '../quiz/ScorePanel';
+import type { ScoreState } from '../game/scoring';
+import type { ScoreDraw } from '../game/scoring';
 
 interface Props {
   state: GameState;
   onNewRound: () => void;
+  scoreState: ScoreState;
+  scoreResult?: { draw: ScoreDraw; kind: 'win' | 'lose' } | null;
+  onResetRound: () => void;
+  onResetAll: () => void;
 }
 
-export function GameInfo({ state, onNewRound }: Props) {
+export function GameInfo({ state, onNewRound, scoreState, scoreResult, onResetRound, onResetAll }: Props) {
   const remaining = state.deck.length;
   const phaseText = {
     idle: '未开始',
@@ -28,6 +35,14 @@ export function GameInfo({ state, onNewRound }: Props) {
 
   return (
     <div className="game-info">
+      {/* 积分(累计+当轮) */}
+      <ScorePanel
+        score={scoreState}
+        result={scoreResult}
+        onResetRound={onResetRound}
+        onResetAll={onResetAll}
+      />
+
       <div className="info-row"><span>局数</span><b>{state.round}</b></div>
       <div className="info-row"><span>庄家</span><b>{state.players.length ? SEAT_NAME[state.banker] : '-'}</b></div>
       <div className="info-row"><span>当前</span><b>{state.players.length ? SEAT_NAME[state.currentSeat] : '-'}</b></div>

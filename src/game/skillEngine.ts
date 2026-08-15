@@ -287,6 +287,7 @@ function shantenImpl(counts: Counts, laizi: number, melds: number): number {
       }
     }
     // 3) 雀头 / 搭子
+    // 搭子类型: 对子(cnt>=2) / 相邻搭子(i,i+1) / 嵌张搭子(i,i+2, 如24万进3、13筒进2、68筒进7)
     if (H === 0) {
       if (cnt >= 2) {
         cc[i] -= 2;
@@ -303,6 +304,11 @@ function shantenImpl(counts: Counts, laizi: number, melds: number): number {
         dfs(i, F, H, P + 1, L, cc);
         cc[i] += 1; cc[i + 1] += 1;
       }
+      if (i < 30 && [1, 2, 3, 4, 5, 6, 7].includes(i % 10) && cnt >= 1 && cc[i + 2] >= 1) {
+        cc[i] -= 1; cc[i + 2] -= 1;
+        dfs(i, F, H, P + 1, L, cc);
+        cc[i] += 1; cc[i + 2] += 1;
+      }
     } else {
       if (cnt >= 2) {
         cc[i] -= 2;
@@ -313,6 +319,11 @@ function shantenImpl(counts: Counts, laizi: number, melds: number): number {
         cc[i] -= 1; cc[i + 1] -= 1;
         dfs(i, F, H, P + 1, L, cc);
         cc[i] += 1; cc[i + 1] += 1;
+      }
+      if (i < 30 && [1, 2, 3, 4, 5, 6, 7].includes(i % 10) && cnt >= 1 && cc[i + 2] >= 1) {
+        cc[i] -= 1; cc[i + 2] -= 1;
+        dfs(i, F, H, P + 1, L, cc);
+        cc[i] += 1; cc[i + 2] += 1;
       }
     }
     // 4) 搭子：单张 + 癞子
@@ -346,13 +357,14 @@ export interface TileRemain {
   remain: number; // 剩余估算张数(4 - 手中张数)
 }
 
-function remaining(counts13: Counts, laizi13: number, sc: number): number {
-  if (sc === LAIZI) return 4 - laizi13;
-  return 4 - (counts13[sc] ?? 0);
+function remaining(counts13: Counts, laizi13: number, sc: number, seen?: Counts): number {
+  const seenN = seen && sc !== LAIZI ? (seen[sc] ?? 0) : 0;
+  if (sc === LAIZI) return 4 - laizi13 - (seen && (seen[LAIZI] ?? 0));
+  return 4 - (counts13[sc] ?? 0) - seenN;
 }
 
 // 已听牌(向听 0)：返回可胡的牌列表(按剩余张数降序)
-export function winningTiles(counts13: Counts, laizi13: number, melds = 0): TileRemain[] {
+export function winningTiles(counts13: Counts, laizi13: number, melds = 0, seen?: Counts): TileRemain[] {
   const wins: TileRemain[] = [];
   for (const sc of ALL_TILES) {
     let c14: Counts;
@@ -366,7 +378,7 @@ export function winningTiles(counts13: Counts, laizi13: number, melds = 0): Tile
       l14 = laizi13;
     }
     if (isWin(c14, l14, melds)) {
-      const r = remaining(counts13, laizi13, sc);
+      const r = remaining(counts13, laizi13, sc, seen);
       if (r > 0) wins.push({ code: fromSkillCode(sc), name: skillName(sc), remain: r });
     }
   }
@@ -375,10 +387,10 @@ export function winningTiles(counts13: Counts, laizi13: number, melds = 0): Tile
 }
 
 // 向听 s>0：返回有效进张(摸到后将向听降到 s-1)
-export function advancingTiles(counts13: Counts, laizi13: number, s: number, melds = 0): TileRemain[] {
+export function advancingTiles(counts13: Counts, laizi13: number, s: number, melds = 0, seen?: Counts): TileRemain[] {
   const adv: TileRemain[] = [];
   for (const sc of ALL_TILES) {
-    if (remaining(counts13, laizi13, sc) <= 0) continue;
+    if (remaining(counts13, laizi13, sc, seen) <= 0) continue;
     const c14: Counts = { ...counts13 };
     c14[sc] = (c14[sc] ?? 0) + 1;
     const l14 = laizi13 + (sc === LAIZI ? 1 : 0);
@@ -396,7 +408,7 @@ export function advancingTiles(counts13: Counts, laizi13: number, s: number, mel
       }
       if (shanten(c13b, l13b, melds) === s - 1) { found = true; break; }
     }
-    if (found) adv.push({ code: fromSkillCode(sc), name: skillName(sc), remain: remaining(counts13, laizi13, sc) });
+    if (found) adv.push({ code: fromSkillCode(sc), name: skillName(sc), remain: remaining(counts13, laizi13, sc, seen) });
   }
   adv.sort((a, b) => b.remain - a.remain || toSkillCode(a.code) - toSkillCode(b.code));
   return adv;
@@ -424,7 +436,8 @@ export interface SkillAnalysis {
 }
 
 // 手牌应为 14-3*melds 张(摸牌后待打一张)
-export function analyzeHand(codes: string[], melds = 0): SkillAnalysis {
+// seen: 已见牌(各家舍牌/副露), 用于扣除剩余张数
+export function analyzeHand(codes: string[], melds = 0, seen?: Counts): SkillAnalysis {
   const counts = makeCounts(codes);
   const total = Object.values(counts).reduce((s, x) => s + x, 0);
   if (total !== 14 - 3 * melds) {
@@ -464,7 +477,7 @@ export function analyzeHand(codes: string[], melds = 0): SkillAnalysis {
       l13 = laizi;
     }
     const s = shanten(c13, l13, melds);
-    const tiles = s === 0 ? winningTiles(c13, l13, melds) : advancingTiles(c13, l13, s, melds);
+    const tiles = s === 0 ? winningTiles(c13, l13, melds, seen) : advancingTiles(c13, l13, s, melds, seen);
     rows.push({
       discardCode: fromSkillCode(y),
       discardName: skillName(y),
@@ -478,6 +491,8 @@ export function analyzeHand(codes: string[], melds = 0): SkillAnalysis {
 
   rows.sort((a, b) => {
     if (a.shantenAfter !== b.shantenAfter) return a.shantenAfter - b.shantenAfter;
+    // 同等向听下: 优先总张数多(充分考虑重复进张), 再比门数
+    if (b.tileCount !== a.tileCount) return b.tileCount - a.tileCount;
     if (b.tiles.length !== a.tiles.length) return b.tiles.length - a.tiles.length;
     return toSkillCode(a.discardCode) - toSkillCode(b.discardCode);
   });
@@ -493,7 +508,8 @@ export function analyzeHand(codes: string[], melds = 0): SkillAnalysis {
 }
 
 // 13-3*melds 张手牌(已打出一张)：仅当前状态，无候选
-export function analyzePartialHand(codes: string[], melds = 0): {
+// seen: 已见牌(各家舍牌/副露), 用于扣除剩余张数
+export function analyzePartialHand(codes: string[], melds = 0, seen?: Counts): {
   shanten: number;
   isTenpai: boolean;
   tiles: TileRemain[];
@@ -504,7 +520,7 @@ export function analyzePartialHand(codes: string[], melds = 0): {
   const countsNoHz = { ...counts };
   delete countsNoHz[LAIZI];
   const s = shanten(countsNoHz, laizi, melds);
-  const tiles = s === 0 ? winningTiles(countsNoHz, laizi, melds) : advancingTiles(countsNoHz, laizi, s, melds);
+  const tiles = s === 0 ? winningTiles(countsNoHz, laizi, melds, seen) : advancingTiles(countsNoHz, laizi, s, melds, seen);
   return {
     shanten: s,
     isTenpai: s === 0,

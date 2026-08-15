@@ -1,6 +1,6 @@
 // 根组件: 麻将桌面布局与交互
 // 顶部导航: 对弈 / 智能模拟; 侧栏: 信息 / 辅助
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGame } from './hooks/useGame';
 import { HUMAN_SEAT } from './game/constants';
 import { SEAT_NAME } from './game/types';
@@ -21,8 +21,15 @@ function App() {
   const [view, setView] = useState<View>('game');
   const [sideTab, setSideTab] = useState<SideTab>('info');
 
+  // 切回对弈时同步最新积分(模拟页可能已加分)
+  const switchView = (v: View) => {
+    if (v === 'game') game.scoreReload();
+    setView(v);
+  };
+
   const {
     state, startGame, newRound, humanDiscard, humanReact, humanPass, humanSelfAction, humanPassSelf,
+    scoreState, scoreResult, scoreResetRound, scoreResetAll,
   } = game;
 
   const human = state.players[HUMAN_SEAT];
@@ -40,6 +47,16 @@ function App() {
       ? state.selfActions
       : [];
 
+  // 已见牌 = 各家已舍出 + 副露明牌(扣除剩余张数用)
+  const seenTiles = useMemo(() => {
+    const tiles: import('./game/types').Tile[] = [];
+    for (const p of state.players) {
+      for (const d of p.discards) tiles.push(d);
+      for (const m of p.melds) for (const mt of m.tiles) tiles.push(mt);
+    }
+    return tiles;
+  }, [state]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -48,13 +65,13 @@ function App() {
           <nav className="nav-switch">
             <button
               className={`nav-btn ${view === 'game' ? 'active' : ''}`}
-              onClick={() => setView('game')}
+              onClick={() => switchView('game')}
             >
               🀄 对弈
             </button>
             <button
               className={`nav-btn ${view === 'simulate' ? 'active' : ''}`}
-              onClick={() => setView('simulate')}
+              onClick={() => switchView('simulate')}
             >
               🧪 智能模拟
             </button>
@@ -70,7 +87,7 @@ function App() {
 
       {view === 'simulate' ? (
         <div className="simulator-page">
-          <Simulator onBack={() => setView('game')} />
+          <Simulator onBack={() => switchView('game')} />
         </div>
       ) : (
         <div className="main-layout">
@@ -147,7 +164,14 @@ function App() {
             </div>
             <div className="tab-content">
               {sideTab === 'info' ? (
-                <GameInfo state={state} onNewRound={newRound} />
+                <GameInfo
+                  state={state}
+                  onNewRound={newRound}
+                  scoreState={scoreState}
+                  scoreResult={scoreResult}
+                  onResetRound={scoreResetRound}
+                  onResetAll={scoreResetAll}
+                />
               ) : (
                 started && human ? (
                   <AdvisorTab
@@ -155,6 +179,7 @@ function App() {
                     meldCount={human.melds.length}
                     canDiscard={canDiscard}
                     onDiscard={humanDiscard}
+                    seenTiles={seenTiles}
                   />
                 ) : (
                   <div className="empty-panel">开局后即可查看打牌建议</div>
