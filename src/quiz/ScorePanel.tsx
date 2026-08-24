@@ -1,29 +1,45 @@
 // 全局积分面板 — 对弈"信息"侧栏展示
 // 累计积分(永久) + 当轮积分(可清零) + 自摸/输局次数
-// 结算: 仅统计玩家自己 — 自摸赢 +3S, 他人自摸(自己输) -S
+// 结算: 仅统计玩家自己
+//   自摸胡 +3S / 他人自摸 -S
+//   抢杠胡 +3S(被抢者赔付) / 被抢杠 -3S
+//   暗杠 +6(三家各-2) / 明(补)杠 +3(三家各-1) — 杠分实时结算
 import { useState, useCallback } from 'react';
 import {
   loadScore, saveScore, resetRoundScore, resetAllScore,
 } from '../game/scoring';
-import type { ScoreDraw, ScoreState } from '../game/scoring';
+import type { ScoreDraw, ScoreState, ScoreSettleKind } from '../game/scoring';
 import { codeName } from '../game/skillEngine';
 import { Tile as TileComp } from '../components/Tile';
-import type { Tile, Suit } from '../game/types';
+import type { Tile, Suit, GangEvent } from '../game/types';
+import { SEAT_NAME } from '../game/types';
 
 // 项目编码 → 牌(仅渲染)
 function codeToTile(code: string): Tile {
   return { id: -1, suit: code[0] as Suit, rank: parseInt(code.slice(1), 10) };
 }
 
+// 杠事件文案: 杠家得X / 其他家扣Y
+function gangLabel(ev: GangEvent): string {
+  const gangSeatName = SEAT_NAME[ev.gangSeat];
+  const typeName = ev.type === 'angang' ? '暗杠' : ev.type === 'minggang' ? '明杠' : '补杠';
+  if (ev.seat === ev.gangSeat) return `你${typeName}得 <b style="color:#2ecc71">+${ev.delta}</b>`;
+  return `${gangSeatName}家${typeName},你 <b style="color:#e74c3c">${ev.delta}</b>`;
+}
+
 // 积分状态 hook(对弈/模拟共用同一份 localStorage 数据)
 export function useScore() {
   const [state, setState] = useState<ScoreState>(() => loadScore());
-  const [lastResult, setLastResult] = useState<{ draw: ScoreDraw; kind: 'win' | 'lose' } | null>(null);
+  const [lastResult, setLastResult] = useState<{ draw: ScoreDraw; kind: ScoreSettleKind } | null>(null);
+  const [lastGang, setLastGang] = useState<GangEvent | null>(null);
 
-  // 结算一局: amount=该局S(牌面总分), isWin=true自摸赢(+3S) / false他人自摸(-S)
-  const settle = useCallback((amount: number, isWin: boolean) => {
+  // 结算一局: amount=该局S(牌面总分)
+  //   win: 自摸 → +3S; lose: 他人自摸 → -S
+  //   qianggang: 抢杠胡 → +3S; beRobbed: 被抢杠 → -3S
+  const settle = useCallback((amount: number, kind: ScoreSettleKind) => {
     setState((prev) => {
-      const delta = isWin ? amount * 3 : -amount;
+      const isWin = kind === 'win' || kind === 'qianggang';
+      const delta = kind === 'lose' ? -amount : isWin ? amount * 3 : -amount * 3;
       const next = {
         ...prev,
         cumulative: prev.cumulative + delta,
@@ -37,22 +53,36 @@ export function useScore() {
     });
   }, []);
 
+  // 杠分实时结算: 杠家+6/+3, 其他家-2/-1(事件已含受影响者与delta)
+  const applyGang = useCallback((ev: GangEvent) => {
+    setState((prev) => {
+      const next = {
+        ...prev,
+        cumulative: prev.cumulative + ev.delta,
+        round: prev.round + ev.delta,
+      };
+      saveScore(next);
+      return next;
+    });
+  }, []);
+
   const resetRound = useCallback(() => setState(resetRoundScore()), []);
   const resetAll = useCallback(() => setState(resetAllScore()), []);
   // 重新读取localStorage(供切换视图时同步最新积分)
   const reload = useCallback(() => setState(loadScore()), []);
 
-  return { state, lastResult, setLastResult, settle, resetRound, resetAll, reload };
+  return { state, lastResult, setLastResult, lastGang, setLastGang, settle, applyGang, resetRound, resetAll, reload };
 }
 
 interface Props {
   score: ScoreState;
-  result?: { draw: ScoreDraw; kind: 'win' | 'lose' } | null; // 最近一局摸码亮牌结果
+  result?: { draw: ScoreDraw; kind: ScoreSettleKind } | null; // 最近一局摸码亮牌结果
+  gangEvent?: GangEvent | null; // 最近一条杠分事件(人类视角)
   onResetRound: () => void;
   onResetAll: () => void;
 }
 
-export function ScorePanel({ score, result, onResetRound, onResetAll }: Props) {
+export function ScorePanel({ score, result, gangEvent, onResetRound, onResetAll }: Props) {
   const detail = result?.draw;
   return (
     <>
@@ -71,6 +101,12 @@ export function ScorePanel({ score, result, onResetRound, onResetAll }: Props) {
             累计自摸 {score.totalSelfDraws} 次 · 输 {score.totalLoseRounds} 局(永久保留)
           </span>
         </div>
+        {gangEvent && (
+          <div className="score-detail">
+            <span>🀄 杠分:</span>
+            <span dangerouslySetInnerHTML={{ __html: gangLabel(gangEvent) }} />
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <button
             className="quiz-toolbar-btn"
@@ -102,9 +138,18 @@ export function ScorePanel({ score, result, onResetRound, onResetAll }: Props) {
           ))}
           <span>
             S=<b style={{ color: '#2ecc71' }}>{detail.total}</b>
-            {result?.kind === 'win'
-              ? <>自摸赢 <b style={{ color: '#2ecc71' }}>3×{detail.total}={detail.winnerGain}</b>, 三家各扣 {detail.loserPay}</>
-              : <>被扣 <b style={{ color: '#e74c3c' }}>-{detail.loserPay}</b> (自摸者得 {detail.winnerGain})</>}
+            {(() => {
+              switch (result?.kind) {
+                case 'win':
+                  return <>自摸赢 <b style={{ color: '#2ecc71' }}>3×{detail.total}={detail.winnerGain}</b>, 三家各扣 {detail.loserPay}</>;
+                case 'qianggang':
+                  return <>抢杠胡!<b style={{ color: '#2ecc71' }}>+{detail.winnerGain}</b> (被抢者赔付)</>;
+                case 'beRobbed':
+                  return <>被抢杠!损失 <b style={{ color: '#e74c3c' }}>-{detail.winnerGain}</b> (抢杠者得 {detail.winnerGain})</>;
+                default:
+                  return <>被扣 <b style={{ color: '#e74c3c' }}>-{detail.loserPay}</b> (自摸者得 {detail.winnerGain})</>;
+              }
+            })()}
           </span>
         </div>
       )}

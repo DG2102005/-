@@ -1,9 +1,9 @@
-// 操作面板: 碰/杠/胡/放弃 + 暗杠/补杠
+// 操作面板: 碰/杠/胡/放弃 + 暗杠/补杠 + 抢杠
 import type { ActionOption } from '../game/types';
 
 interface Props {
   options: ActionOption[];
-  mode: 'react' | 'self'; // react=他人出牌反应, self=自摸操作
+  mode: 'react' | 'self' | 'qianggang'; // react=他人出牌反应, self=自摸操作, qianggang=抢杠反应
   onChoose: (option: ActionOption) => void;
   onPass: () => void;
 }
@@ -34,7 +34,7 @@ export function ActionPanel({ options, mode, onChoose, onPass }: Props) {
   return (
     <div className="action-panel">
       <div className="action-prompt">
-        {mode === 'react' ? '请选择操作:' : '可执行:'}
+        {mode === 'qianggang' ? '有人补杠,可抢杠胡:' : mode === 'react' ? '请选择操作:' : '可执行:'}
       </div>
       <div className="action-buttons">
         {unique.map((o, i) => (
@@ -43,10 +43,10 @@ export function ActionPanel({ options, mode, onChoose, onPass }: Props) {
             className={`action-btn action-${o.type}`}
             onClick={() => onChoose(o)}
           >
-            {ACTION_LABEL[o.type] || o.type}
+            {o.type === 'hu' && mode === 'qianggang' ? '抢杠胡' : ACTION_LABEL[o.type] || o.type}
           </button>
         ))}
-        {(mode === 'react' || showSelfPass) && (
+        {(mode === 'react' || mode === 'qianggang' || showSelfPass) && (
           <button className="action-btn action-pass" onClick={onPass}>
             放弃
           </button>

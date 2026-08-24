@@ -1,6 +1,6 @@
 // 根组件: 麻将桌面布局与交互
-// 顶部导航: 对弈 / 智能模拟; 侧栏: 信息 / 辅助
-import { useMemo, useState } from 'react';
+// 顶部导航: 对弈 / 智能模拟 / 收藏复盘; 侧栏: 信息 / 辅助
+import { useMemo, useState, useCallback } from 'react';
 import { useGame } from './hooks/useGame';
 import { HUMAN_SEAT } from './game/constants';
 import { SEAT_NAME } from './game/types';
@@ -12,24 +12,43 @@ import { ActionPanel } from './components/ActionPanel';
 import { GameInfo } from './components/GameInfo';
 import { AdvisorTab } from './components/AdvisorTab';
 import { Simulator } from './quiz/Simulator';
+import { ReviewReplay } from './components/ReviewReplay';
+import { loadSavedRounds } from './game/savedRounds';
+import type { SavedRound } from './game/savedRounds';
+import { saveRound } from './game/savedRounds';
 
-type View = 'game' | 'simulate';
+type View = 'game' | 'simulate' | 'review';
 type SideTab = 'info' | 'advisor';
 
 function App() {
   const game = useGame();
   const [view, setView] = useState<View>('game');
   const [sideTab, setSideTab] = useState<SideTab>('info');
+  const [savedRounds, setSavedRounds] = useState<SavedRound[]>(() => loadSavedRounds());
+  const [replayHint, setReplayHint] = useState('');
 
   // 切回对弈时同步最新积分(模拟页可能已加分)
   const switchView = (v: View) => {
     if (v === 'game') game.scoreReload();
+    if (v === 'review') setSavedRounds(loadSavedRounds());
     setView(v);
   };
 
+  // 收藏当前终局
+  const handleSaveRound = useCallback(() => {
+    const rec = saveRound(game.state);
+    if (rec) {
+      setSavedRounds(loadSavedRounds());
+      setReplayHint(`已收藏第${rec.round}局, 可到"📚 复盘"中查看`);
+    } else {
+      setReplayHint('仅在对弈结束后可收藏');
+    }
+    setTimeout(() => setReplayHint(''), 2500);
+  }, [game.state]);
+
   const {
     state, startGame, newRound, humanDiscard, humanReact, humanPass, humanSelfAction, humanPassSelf,
-    scoreState, scoreResult, scoreResetRound, scoreResetAll,
+    scoreState, scoreResult, scoreGangEvent, scoreResetRound, scoreResetAll,
   } = game;
 
   const human = state.players[HUMAN_SEAT];
@@ -57,6 +76,10 @@ function App() {
     return tiles;
   }, [state]);
 
+  // 撤销/重do 状态
+  const canUndo = state.historyIndex > 0;
+  const canRedo = state.historyIndex < state.history.length - 1;
+
   return (
     <div className="app">
       <header className="app-header">
@@ -75,19 +98,44 @@ function App() {
             >
               🧪 智能模拟
             </button>
+            <button
+              className={`nav-btn ${view === 'review' ? 'active' : ''}`}
+              onClick={() => switchView('review')}
+            >
+              📚 复盘
+            </button>
           </nav>
           {view === 'game' && !started && (
             <button className="start-btn" onClick={startGame}>开始游戏</button>
           )}
           {view === 'game' && gameOver && (
-            <button className="start-btn" onClick={newRound}>开始新一局</button>
+            <>
+              <button className="start-btn" onClick={newRound}>开始新一局</button>
+              <button className="start-btn" onClick={handleSaveRound}>💾 收藏本局</button>
+            </>
           )}
         </div>
       </header>
 
+      {replayHint && <div className="replay-hint">{replayHint}</div>}
+
       {view === 'simulate' ? (
         <div className="simulator-page">
           <Simulator onBack={() => switchView('game')} />
+        </div>
+      ) : view === 'review' ? (
+        <div className="review-page">
+          <ReviewReplay
+            rounds={savedRounds}
+            onReload={() => setSavedRounds(loadSavedRounds())}
+            onPlayFrom={(st, label) => {
+              // 从复盘节点继续演绎 → 加载为对弈
+              game.loadRound(st);
+              setReplayHint(`演绎中: ${label} 之后继续`);
+              setTimeout(() => setReplayHint(''), 2500);
+              switchView('game');
+            }}
+          />
         </div>
       ) : (
         <div className="main-layout">
@@ -110,9 +158,9 @@ function App() {
                 ) : (
                   <div className="welcome">
                     <div className="welcome-title">红中百搭 · 广东推倒胡</div>
-                    <div className="welcome-desc">1人对战3AI · 仅自摸胡 · 严禁天胡地胡</div>
+                    <div className="welcome-desc">1人对战3AI · 自摸/抢杠胡 · 明暗杠实时计分</div>
                     <div className="welcome-features">
-                      ✓ 自动理牌 ✓ 逆时针出牌 ✓ 侧栏辅助打牌建议
+                      ✓ 自动理牌 ✓ 逆时针出牌 ✓ 撤销重做 ✓ 牌型分解 ✓ 抢杠胡
                     </div>
                     <button className="start-btn big" onClick={startGame}>开始游戏</button>
                   </div>
@@ -137,15 +185,47 @@ function App() {
                   <MeldArea melds={human.melds} size={30} />
                   <HandRow
                     hand={human.hand}
+                    melds={human.melds}
                     onDiscard={humanDiscard}
                     interactive={canDiscard}
                     drawnTileId={state.drawnTileId}
                   />
                   {selfOptions.length > 0 && (
-                    <ActionPanel options={selfOptions} mode="self" onChoose={humanSelfAction} onPass={humanPassSelf} />
+                    <ActionPanel
+                      options={selfOptions}
+                      mode="self"
+                      onChoose={humanSelfAction}
+                      onPass={humanPassSelf} />
                   )}
                   {reactOptions.length > 0 && (
-                    <ActionPanel options={reactOptions} mode="react" onChoose={humanReact} onPass={humanPass} />
+                    <ActionPanel
+                      options={reactOptions}
+                      mode={state.reactMode === 'qianggang' ? 'qianggang' : 'react'}
+                      onChoose={humanReact}
+                      onPass={humanPass} />
+                  )}
+                  {/* 撤销/重do 按钮 */}
+                  {canUndo || canRedo && (
+                    <div className="action-undo-redo">
+                      {canUndo && (
+                        <button
+                          className="action-btn action-undo"
+                          onClick={game.undo}
+                          title="撤销上一步"
+                        >
+                          ↩ 撤销
+                        </button>
+                      )}
+                      {canRedo && (
+                        <button
+                          className="action-btn action-redo"
+                          onClick={game.redo}
+                          title="重做"
+                        >
+                          ↪ 重do
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -169,6 +249,7 @@ function App() {
                   onNewRound={newRound}
                   scoreState={scoreState}
                   scoreResult={scoreResult}
+                  scoreGangEvent={scoreGangEvent}
                   onResetRound={scoreResetRound}
                   onResetAll={scoreResetAll}
                 />

@@ -4,19 +4,21 @@ import { SEAT_NAME } from '../game/types';
 import { Tile } from './Tile';
 import { sortHand } from '../game/sort';
 import { ScorePanel } from '../quiz/ScorePanel';
-import type { ScoreState } from '../game/scoring';
+import type { ScoreState, ScoreSettleKind } from '../game/scoring';
 import type { ScoreDraw } from '../game/scoring';
+import type { GangEvent } from '../game/types';
 
 interface Props {
   state: GameState;
   onNewRound: () => void;
   scoreState: ScoreState;
-  scoreResult?: { draw: ScoreDraw; kind: 'win' | 'lose' } | null;
+  scoreResult?: { draw: ScoreDraw; kind: ScoreSettleKind } | null;
+  scoreGangEvent?: GangEvent | null;
   onResetRound: () => void;
   onResetAll: () => void;
 }
 
-export function GameInfo({ state, onNewRound, scoreState, scoreResult, onResetRound, onResetAll }: Props) {
+export function GameInfo({ state, onNewRound, scoreState, scoreResult, scoreGangEvent, onResetRound, onResetAll }: Props) {
   const remaining = state.deck.length;
   const phaseText = {
     idle: '未开始',
@@ -39,6 +41,7 @@ export function GameInfo({ state, onNewRound, scoreState, scoreResult, onResetRo
       <ScorePanel
         score={scoreState}
         result={scoreResult}
+        gangEvent={scoreGangEvent}
         onResetRound={onResetRound}
         onResetAll={onResetAll}
       />

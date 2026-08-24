@@ -10,6 +10,13 @@ import { toSkillCode } from './skillEngine';
 
 export const KEY_SCORE = 'redcenter.score';
 
+// 一局胜败结算类型:
+//   win       人类自摸胡 +3S
+//   lose      他人自摸,人类输家 -S
+//   qianggang 人类抢杠胡 +3S(被抢者赔付)
+//   beRobbed  人类补杠被抢杠 -3S
+export type ScoreSettleKind = 'win' | 'lose' | 'qianggang' | 'beRobbed';
+
 export interface ScoreCard {
   code: string;   // 牌编码(如 m2 / z5)
   value: number;  // 该牌分值

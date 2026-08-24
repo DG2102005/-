@@ -47,7 +47,7 @@ function sameSuit(startIdx: number): boolean {
 //   - 选项B: c 作为顺子的一部分 (c 非字牌)
 //            c 可在顺子(start, start+1, start+2)的第 0/1/2 个位置
 //            c 位置必用实牌, 其他2个位置自由选择实牌或红中(枚举4种组合)
-function canMelds(counts: number[], wild: number, k: number): boolean {
+export function canMelds(counts: number[], wild: number, k: number): boolean {
   if (k === 0) {
     // 所有非红中牌必须用完
     for (let i = 0; i < N; i++) {

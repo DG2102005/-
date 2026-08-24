@@ -39,6 +39,22 @@ export interface PlayerState {
   isRiichi: boolean;    // 是否听牌(仅内部记录)
 }
 
+// 杠事件(即时计分用: 杠家得/其他家扣)
+export interface GangEvent {
+  time: number;         // 日志序号(与log对齐)
+  seat: Seat;           // 积分受影响者
+  gangSeat: Seat;       // 杠家
+  type: 'angang' | 'minggang' | 'bugang';
+  delta: number;        // 杠家 +6/+3, 其他家 -2/-1
+}
+
+// Undo/Redo 历史记录条目
+export interface HistoryEntry {
+  action: string;       // 动作描述(如"出牌 m1", "暗杠 z5")
+  stateBefore: GameState; // 动作前的状态快照
+  timestamp: number;    // 时间戳(ms)
+}
+
 // 游戏阶段
 export type Phase = 'idle' | 'dealing' | 'draw' | 'discard' | 'action' | 'react' | 'gameover';
 
@@ -81,14 +97,39 @@ export interface GameState {
   selfActions: ActionOption[];   // 自摸操作(暗杠/补杠)
   reactRemaining: Seat[];       // 碰杠反应队列剩余座位
   discardSource: Seat | null;   // 当前被反应的出牌者
-  reactMode: 'discard' | null;  // 反应模式标记
-  // 辅助训练相关
-  drawnTileId: number | null;   // 当前轮次新摸的牌id(高亮+不参与理牌)
-  lastAdvice: AdviceData | null;  // 当前给人类的最优打法建议
-  lastMistake: MistakeAlert | null;  // 上一次失误提醒
-  review: ReviewReport | null;  // 局终复盘报告
-  lastCorrection?: UserCorrection | null;  // 最近一次校正记录(UI展示用)
+  reactMode: 'discard' | 'qianggang' | null;  // 反应模式标记
+  // 抢杠相关
+  qianggangVictim: Seat | null;  // 正在补杠的玩家(其他家可抢杠胡)
+  qianggangTile: Tile | null;    // 被补的那张牌
+  gangEvents: GangEvent[];       // 杠分事件队列(杠家得/其他家扣, 实时结算)
+  // 撤销/重做历史
+  history: HistoryEntry[];       // 历史状态快照栈
+  historyIndex: number;          // 当前历史索引(指向当前状态, -1表示无历史)
 }
+
+// 牌型分解块类型
+export type BlockKind = 'meld' | 'pair' | 'taatsu' | 'float';
+
+// 一个分组块(手牌顺序中的一段连续牌)
+export interface DecompositionBlock {
+  kind: BlockKind;        // meld=成牌(顺子/刻子) pair=对子 taatsu=搭子 float=散张
+  tiles: Tile[];          // 组成该块的牌(保持原顺序)
+}
+
+// 牌型分解结果(保持原手牌顺序, 仅在块与块之间插入间隔)
+export interface Decomposition {
+  blocks: DecompositionBlock[];   // 顺序不变的分组块
+  shanten: number;                // 当前向听数(近似)
+  isValidMahjong: boolean;        // 是否为成牌结构(4面子+1将)
+}
+
+// 牌型分解结果(含用户自定义标记)
+export interface UserDecomposition extends Decomposition {
+  // 每张牌的分类标记(用于UI交互锁定)
+  tileClasses: Map<Tile, 'set' | 'loose'>;
+}
+
+// 辅助训练相关
 
 // 最优打法建议(基于当前局面)
 export interface AdviceData {

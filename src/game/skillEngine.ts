@@ -95,8 +95,8 @@ export function parseHandText(text: string): Counts {
     }
     // 字牌
     let ziSc = 0;
-    for (const [name, sc] of Object.entries(ZI_NAME)) {
-      if (name === ch) { ziSc = sc; break; }
+    for (const [scStr, nm] of Object.entries(ZI_NAME)) {
+      if (nm === ch) { ziSc = Number(scStr); break; }
     }
     if (ziSc > 0) {
       counts[ziSc] = (counts[ziSc] ?? 0) + 1;
@@ -358,8 +358,8 @@ export interface TileRemain {
 }
 
 function remaining(counts13: Counts, laizi13: number, sc: number, seen?: Counts): number {
-  const seenN = seen && sc !== LAIZI ? (seen[sc] ?? 0) : 0;
-  if (sc === LAIZI) return 4 - laizi13 - (seen && (seen[LAIZI] ?? 0));
+  const seenN = seen ? (seen[sc] ?? 0) : 0;
+  if (sc === LAIZI) return 4 - laizi13 - seenN;
   return 4 - (counts13[sc] ?? 0) - seenN;
 }
 

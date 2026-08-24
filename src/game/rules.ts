@@ -167,6 +167,20 @@ export function getAllSelfActions(player: PlayerState): ActionOption[] {
   return options;
 }
 
+// 他人补杠时, 某玩家可抢杠胡: 手牌+被补的那张牌可成胡即允许抢杠
+export function getQiangGangActions(
+  player: PlayerState,
+  tile: Tile,
+  victimSeat: Seat
+): ActionOption[] {
+  if (player.hand.length === 0) return [];
+  const test = player.hand.concat(tile);
+  if (canWin(test, player.melds.length)) {
+    return [{ type: 'hu', tile, seat: player.seat, meld: null }];
+  }
+  return [];
+}
+
 // 执行碰操作: 从手牌移除2张，添加副露
 export function applyPeng(player: PlayerState, meld: Meld): void {
   // meld.tiles 包含 2张手牌 + 1张弃牌
