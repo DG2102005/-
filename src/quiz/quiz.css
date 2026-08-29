@@ -556,11 +556,12 @@
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(212,175,55,0.2);
-  border-radius: 8px;
-  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2));
+  border: 1px solid rgba(212,175,55,0.22);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
   margin: 8px 0 12px;
+  box-shadow: var(--shadow-sm);
 }
 .score-panel-item {
   display: flex;
@@ -572,17 +573,18 @@
 .score-panel-value {
   font-size: 22px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--gold-bright);
   line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 .score-panel-value.cum { color: #2ecc71; }
 .score-panel-sub { font-size: 11px; color: var(--text-dim); }
 .score-detail {
   font-size: 13px;
   color: var(--text);
-  background: rgba(46,204,113,0.08);
+  background: var(--success-bg);
   border: 1px solid rgba(46,204,113,0.25);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   margin-bottom: 10px;
   display: flex;
@@ -592,7 +594,7 @@
 }
 .score-detail-card {
   background: rgba(255,255,255,0.08);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
   font-size: 13px;
   display: inline-flex;

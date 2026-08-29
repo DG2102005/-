@@ -94,12 +94,9 @@ export function SmartAnalysisPanel({ analysis, onClose, onDiscard }: Props) {
                   <>
                     <span>可进<b>{s.categoryCount}</b>门<b>{s.tileCount}</b>张</span>
                     <div className="sap-card-ting-tiles">
-                      {s.improvementCodes.slice(0, 8).map((code, j) => (
+                      {s.improvementCodes.map((code, j) => (
                         <Tile key={j} tile={codeToTile(code)} size={26} />
                       ))}
-                      {s.improvementCodes.length > 8 && (
-                        <span className="sap-more">+{s.improvementCodes.length - 8}</span>
-                      )}
                     </div>
                   </>
                 )}

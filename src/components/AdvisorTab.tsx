@@ -70,7 +70,6 @@ function ScenarioCard({
   onPick?: (code: string) => void;
 }) {
   const { discardCode, discardName, shantenAfter, isTenpai, tiles, categoryCount, tileCount } = scenario;
-  const limit = 12; // 进张牌面最多展示 12 张
   return (
     <div className={`adv-card ${best ? 'adv-card-best' : ''}`}>
       {/* 左侧: 打出的牌 */}
@@ -90,15 +89,12 @@ function ScenarioCard({
           <b>{categoryCount}</b>门<b>{tileCount}</b>张
         </div>
         <div className="adv-card-tiles">
-          {tiles.slice(0, limit).map((t, j) => (
+          {tiles.map((t, j) => (
             <div key={j} className="adv-card-tile">
               <TileComp tile={codeToTile(t.code)} size={26} />
               <span className="adv-card-remain">{t.remain}</span>
             </div>
           ))}
-          {tiles.length > limit && (
-            <span className="adv-more">+{tiles.length - limit}</span>
-          )}
         </div>
         {onPick && (
           <button className="adv-card-btn" onClick={() => onPick(discardCode)}>
@@ -203,7 +199,7 @@ export function AdvisorTab({ hand, meldCount, canDiscard, onDiscard, seenTiles }
             {partial.isTenpai ? `可胡${partial.tiles.length}门${partial.tileCount}张` : `可进${partial.tiles.length}门${partial.tileCount}张`}
           </span>
           <div className="adv-card-tiles" style={{ marginTop: 6 }}>
-            {partial.tiles.slice(0, 12).map((t, j) => (
+            {partial.tiles.map((t, j) => (
               <div key={j} className="adv-card-tile">
                 <TileComp tile={codeToTile(t.code)} size={26} />
                 <span className="adv-card-remain">{t.remain}</span>

@@ -176,20 +176,26 @@ function mentsuOk(c: Counts, laizi: number): boolean {
       if (dfs(i, L - 2)) { c[i] += 1; return true; }
       c[i] += 1;
     }
-    // 2) 顺子(仅数牌，可补癞子)
-    if (i < 30 && [1, 2, 3, 4, 5, 6, 7].includes(i % 10)) {
-      const have: number[] = [];
-      if (c[i] > 0) have.push(i);
-      if (c[i + 1] > 0) have.push(i + 1);
-      if (c[i + 2] > 0) have.push(i + 2);
-      const need = 3 - have.length;
-      if (have.length >= 1 && need <= L) {
-        for (const d of have) c[d] -= 1;
-        if (dfs(i, L - need)) {
-          for (const d of have) c[d] += 1;
-          return true;
+    // 2) 顺子(仅数牌，癞子可补任意位置: 起点/中间/末尾)
+    if (i < 30) {
+      const blockStart = i <= 9 ? 1 : i <= 19 ? 11 : 21; // 万1-9 / 筒11-19 / 条21-29
+      const blockEnd = blockStart + 8;
+      for (let pos = 0; pos < 3; pos++) {
+        const s = i - pos; // 顺子起点
+        if (s < blockStart || s + 2 > blockEnd) continue;
+        const have: number[] = [];
+        for (let k = 0; k < 3; k++) {
+          if (c[s + k] > 0) have.push(s + k);
         }
-        for (const d of have) c[d] += 1;
+        const need = 3 - have.length;
+        if (need <= L) {
+          for (const d of have) c[d] -= 1;
+          if (dfs(i, L - need)) {
+            for (const d of have) c[d] += 1;
+            return true;
+          }
+          for (const d of have) c[d] += 1;
+        }
       }
     }
     return false; // 不允许丢弃浮牌：12 张必须全部组成面子
@@ -269,21 +275,23 @@ function shantenImpl(counts: Counts, laizi: number, melds: number): number {
       dfs(i, F + 1, H, P, L, cc);
       cc[i] += 3;
     }
-    // 2) 顺子(可用癞子补缺)
-    if (i < 30 && [1, 2, 3, 4, 5, 6, 7].includes(i % 10)) {
-      const have: number[] = [];
-      if (cc[i] > 0) have.push(i);
-      if (cc[i + 1] > 0) have.push(i + 1);
-      if (cc[i + 2] > 0) have.push(i + 2);
-      if (have.length === 3) {
-        cc[i] -= 1; cc[i + 1] -= 1; cc[i + 2] -= 1;
-        dfs(i, F + 1, H, P, L, cc);
-        cc[i] += 1; cc[i + 1] += 1; cc[i + 2] += 1;
-      }
-      if (have.length >= 1 && have.length <= 2 && 3 - have.length <= L) {
-        for (const d of have) cc[d] -= 1;
-        dfs(i, F + 1, H, P, L - (3 - have.length), cc);
-        for (const d of have) cc[d] += 1;
+    // 2) 顺子(可用癞子补任意位置: 起点/中间/末尾)
+    if (i < 30) {
+      const blockStart = i <= 9 ? 1 : i <= 19 ? 11 : 21; // 万1-9 / 筒11-19 / 条21-29
+      const blockEnd = blockStart + 8;
+      for (let pos = 0; pos < 3; pos++) {
+        const s = i - pos; // 顺子起点
+        if (s < blockStart || s + 2 > blockEnd) continue;
+        const have: number[] = [];
+        for (let k = 0; k < 3; k++) {
+          if (cc[s + k] > 0) have.push(s + k);
+        }
+        const need = 3 - have.length;
+        if (need <= L) {
+          for (const d of have) cc[d] -= 1;
+          dfs(i, F + 1, H, P, L - need, cc);
+          for (const d of have) cc[d] += 1;
+        }
       }
     }
     // 3) 雀头 / 搭子

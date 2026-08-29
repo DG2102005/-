@@ -1,4 +1,4 @@
-// 中央牌桌: 四家打出的牌按方位汇聚显示，模拟现实牌桌
+// 中央牌桌: 各家舍牌放在自己面前行式排布, 完整显示, 互不遮盖
 import type { GameState, Seat } from '../game/types';
 import { Tile } from './Tile';
 
@@ -7,7 +7,9 @@ interface Props {
   showLabel?: boolean;
 }
 
-// 各方位弃牌区
+const DISCARD_SIZE = 24; // 弃牌牌面宽(px)
+
+// 各方位弃牌区: 行式排布, 行内不换行, 多行纵向堆叠
 function DiscardZone({
   tiles,
   direction,
@@ -20,20 +22,21 @@ function DiscardZone({
   showLabel?: boolean;
 }) {
   if (tiles.length === 0) return <div className={`discard-zone discard-${direction} empty`} />;
-  // 每行6张
+  // 上下方位每行10张, 左右方位每行5张(窄区)
+  const per = direction === 'left' || direction === 'right' ? 5 : 10;
   const rows: { id: number; suit: string; rank: number }[][] = [];
-  for (let i = 0; i < tiles.length; i += 6) {
-    rows.push(tiles.slice(i, i + 6));
+  for (let i = 0; i < tiles.length; i += per) {
+    rows.push(tiles.slice(i, i + per));
   }
   return (
     <div className={`discard-zone discard-${direction}`}>
       {rows.map((row, ri) => (
-        <div className="discard-row" key={ri}>
+        <div className={`discard-row discard-row-${direction}`} key={ri}>
           {row.map((t) => (
             <Tile
               key={t.id}
               tile={t as any}
-              size={26}
+              size={DISCARD_SIZE}
               highlight={t.id === highlightId}
               showLabel={showLabel}
             />
